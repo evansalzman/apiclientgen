@@ -6,18 +6,21 @@ const getFunctionTemplate = `
 {{functionDocumentation}}
 **/
 async fuction {{functionName}} ({{parameterSignature}}) {
+
   const logMessagePrefix = '{{functionName}}() ';
 
+  const options = {{options}}
+
   return await requestPromise.get (url)
-  .then ((response: any) => {
-    log.debug(\`$[logMessagePrefix] API JSON response \${require ('util').inspect (response, {colors: true, depth: 2})}\`);
-    return response;
-  })
-  . catch ( (errorResponse: any) => {
-    log.info(\`$[logMessagePrefix] There was an error calling the API.\`);
-    log.debug(\`$[logMessagePrefix] API JSON errorResponse \${require ('util').inspect (errorResponse, {colors: true, depth: 2})}\`);
-    return errorResponse;
-  };)
+    .then ((response: any) => {
+      log.debug(\`$[logMessagePrefix] API JSON response \${require ('util').inspect (response, {colors: true, depth: 2})}\`);
+      return response;
+    })
+    . catch ( (errorResponse: any) => {
+      log.info(\`$[logMessagePrefix] There was an error calling the API.\`);
+      log.debug(\`$[logMessagePrefix] API JSON errorResponse \${require ('util').inspect (errorResponse, {colors: true, depth: 2})}\`);
+      return errorResponse;
+    };)
 
 }
 `;
@@ -55,9 +58,9 @@ async function GenerateClientCalls () {
   if (!swaggerJson) {
     console.log ('DEBUG -- Attempted iteration of swaggerJson, but swaggerJson is not loaded');
 
-    return new Error ('aw, shit');
+    return new Error (`{logMessagePrefix} Swagger json load failure. Or did you not try to load it yet, hmmm?`);
   }
-
+  let functions = '';
   for (const path in swaggerJson.paths) {
     if (swaggerJson.paths.hasOwnProperty (path)) {
       // console.log (`DEBUG -- path ${require ('util').inspect (path, {colors: true, depth: 2})}`);
@@ -66,7 +69,7 @@ async function GenerateClientCalls () {
         if (swaggerJson.paths[path].hasOwnProperty (method)) {
           switch (method){
             case 'get':
-              CreateGetFunction (path, swaggerJson.paths[path][method]);
+              functions += CreateGetFunction (path, swaggerJson.paths[path][method]);
               break;
             case 'post':
               //
@@ -88,11 +91,11 @@ async function GenerateClientCalls () {
     }
   }
 
-  return 'did it';
+  return functions;
 
 }
 
-function CreateGetFunction (path: string, getDef: any) {
+function CreateGetFunction (path: string, getDef: any): string {
 
   const logMessagePrefix = 'CreateGetMethod() ';
 
@@ -118,12 +121,15 @@ function CreateGetFunction (path: string, getDef: any) {
 
   const functionDocumentation = GenFunctionDocumentation (getDef);
 
+  const options = GenRequestOptions (getDef);
+
   const functionString = getFunctionTemplate
     .replace ('{{functionDocumentation}}', functionDocumentation)
     .replace ('{{functionName}}', functionName)
-    .replace ('{{parameterSignature}}', parameterSignature);
+    .replace ('{{parameterSignature}}', parameterSignature)
+    .replace ('{{options}}', options);
 
-  console.log (`DEBUG -- functionString ${functionString}`);
+  return functionString;
 }
 
 function GenFunctionDocumentation (getDef: any): string {
@@ -143,11 +149,28 @@ function GenFunctionParameterSignature (getDef: any): string {
   let parameterSeparator = '';
   for (const param of getDef.parameters) {
     // handle integer and float type conversion to JS number
-    parameterSignature += `${parameterSignature}${param.name.toLowerCase ()}: ${(param.type === 'integer' || param.type === 'float') ? 'number' : param.type}`;
+    parameterSignature += `${parameterSeparator}${param.name.toLowerCase ()}: ${(param.type === 'integer' || param.type === 'float') ? 'number' : param.type}`;
     parameterSeparator = ', ';
   }
 
   return parameterSignature;
+}
+
+function GenRequestOptions (requestDef: any): any {
+
+  const logMessagePrefix  = 'apiclientget.GenRequestOptions() ';
+
+  const options = {
+    Accept: requestDef.produces[0],
+    getFullResponse: false
+  };
+
+  for (const rtype of requestDef.produces) {
+    if (rtype.toLowerCase () === 'application/json') {
+      options.Accept = rtype;
+    }
+  }
+
 }
 
 exports.LoadSwaggerJson = LoadSwaggerJson;
