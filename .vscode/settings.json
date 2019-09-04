@@ -1,0 +1,32 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+    "eslint.enable": true,
+    "editor.renderWhitespace": "all",
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.wordWrap": "off",
+    "editor.lineNumbers": "on",
+
+    // Configure glob patterns for excluding files and folders in searches. Inherits all glob patterns from the files.exclude setting.
+    "search.exclude": {
+        "**/node_modules": true
+    },
+
+    // Controls if suggestions should automatically show up while typing
+    "editor.quickSuggestions": {
+        "comments": false,
+        "strings": true,
+        "other": true
+    },
+
+    // Configure how Git fetches and auto-refreshes
+    "git.autofetch": true,
+    "git.autorefresh": true,
+
+    // Configure VS Code to find the TS linter configuration
+    "tslint.configFile": ".tslint.json",
+    "tslint.exclude": "**/node_modules/**",
+
+    // Configure VS Code to always place the cursor at the top of the file when it is opened
+    "workbench.editor.restoreViewState": false
+}

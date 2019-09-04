@@ -1,0 +1,136 @@
+{
+  "class-name": true,
+  "defaultSeverity": "error",
+  "extends": [
+    "tslint:recommended",
+    "tslint-eslint-rules"
+  ],
+  "jsRules": {},
+  "prefer-const": true,
+  "rules": {
+    "align": [
+      true,
+      "parameters",
+      "statements",
+      "arguments",
+      "members",
+      "elements"
+    ],
+    "arrow-parens": true,
+    "comment-format": [
+      true,
+      "check-lowercase",
+      {
+        "ignore-words": [
+          "TODO",
+          "NOTE",
+          "COMMENT",
+          "ISSUE",
+          "DEMO"
+        ]
+      }
+    ],
+    "curly": true,
+    "eofline": true,
+    "import-spacing": true,
+    "indent": [
+      true,
+      "spaces",
+      2
+    ],
+    "linebreak-style": [
+      true,
+      "LF"
+    ],
+    "max-line-length": [
+      true,
+      240
+    ],
+    "new-parens": true,
+    "newline-before-return": true,
+    "newline-per-chained-call": false,
+    "no-consecutive-blank-lines": [
+      true,
+      1
+    ],
+    "no-console": false,
+    "no-duplicate-imports": true,
+    "no-duplicate-switch-case": true,
+    "no-empty": [
+      true,
+      "allow-empty-catch"
+    ],
+    "no-irregular-whitespace": true,
+    "no-trailing-whitespace": true,
+    "no-unused-variable": [
+      true,
+      {
+        "ignore-pattern": "^_"
+      }
+    ],
+    "one-line": false,
+    "ordered-imports": [
+      true,
+      {
+        "import-sources-order": "lowercase-last",
+        "named-imports-order": "lowercase-first"
+      }
+    ],
+    "prefer-template": [
+      true,
+      "allow-single-concat"
+    ],
+    "quotemark": [
+      true,
+      "single"
+    ],
+    "semicolon": [
+      true,
+      "always"
+    ],
+    "space-before-function-paren": [
+      true,
+      {
+        "anonymous": "always",
+        "asyncArrow": "always",
+        "constructor": "always",
+        "method": "always",
+        "named": "always"
+      }
+    ],
+    "space-within-parens": false,
+    "ter-func-call-spacing": [
+      true,
+      "always"
+    ],
+    "ter-no-tabs": true,
+    "trailing-comma": [
+      true,
+      {
+        "multiline": "never",
+        "singleline": "never"
+      }
+    ],
+    "triple-equals": true,
+    "use-isnan": true,
+    "variable-name": [
+      true,
+      "ban-keywords",
+      "check-format",
+      "allow-leading-underscore"
+    ],
+    "whitespace": [
+      true,
+      "check-branch",
+      "check-operator",
+      "check-typecast",
+      "check-module",
+      "check-separator",
+      "check-rest-spread",
+      "check-type",
+      "check-type-operator",
+      "check-preblock"
+    ]
+  },
+  "rulesDirectory": []
+}

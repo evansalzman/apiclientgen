@@ -1,0 +1,17 @@
+# dependency directories
+node_modules/
+dist/
+
+# dynamic files
+package-lock.json
+*.log
+
+# junk OS files
+*.DS_Store
+[Tt]humbs.db
+
+# always keep these files
+!*.gitkeep
+
+# private files
+*.npmrc

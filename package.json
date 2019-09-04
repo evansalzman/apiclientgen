@@ -1,0 +1,47 @@
+{
+  "name": "apiclientgen",
+  "version": "1.0.0",
+  "description": "Generate an API client skeleton based on a swagger document",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.disney.com/arler002/disneyclientgen"
+  },
+  "keywords": [
+    "API",
+    "Client",
+    "Autogen",
+    "Autogenerate"
+  ],
+  "scripts": {
+    "build": "npm run build:ts",
+    "build:ts": "tsc -p .tsconfig.json",
+    "clean": "npm run clean:dist",
+    "clean:dist": "rm -R ./dist || true",
+    "format": "prettier --write \"dist/**/*.{js,json}\" || true",
+    "lint": "npm run lint:js && npm run lint:ts && lerna run lint",
+    "lint:js": "eslint . || true",
+    "lint:ts": "tslint -c .tslint.json -p .tsconfig.json || true",
+    "test": "node index.js"
+  },
+  "author": "robert arles",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^10.12.18",
+    "@types/prettier": "^1.15.2",
+    "@types/request-promise": "^4.1.44",
+    "@typescript-eslint/eslint-plugin": "^2.1.0",
+    "@typescript-eslint/parser": "^2.1.0",
+    "eslint": "^6.3.0",
+    "prettier": "1.13.7",
+    "ts-node": "^7.0.0",
+    "tslint": "^5.19.0",
+    "tslint-eslint-rules": "^5.4.0",
+    "typescript": "^3.6.2",
+    "typescript-node": "^0.1.3"
+  },
+  "dependencies": {
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4"
+  }
+}
