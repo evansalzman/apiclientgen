@@ -100,16 +100,18 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
   let headerAccept = '';
   for (const produces of apiRequestDefinition.produces) {
     if (produces.toLowerCase ().includes ('application/json')) {
-      headerAccept = `'Accept': 'application/json',`;
+      headerAccept = `'Accept': 'application/json'`;
     }
   }
+  const headersCustom = GenCustomHeaderEntries (apiRequestDefinition);
+  headersCustom.push (headerAccept);
 
   const templateInputs = {
     clientLibraryName,
     endpointPath: `${path}`,
     functionDocumentation,
     functionName,
-    headerAccept,
+    headersCustom,
     parameterSignature
   };
 
@@ -132,19 +134,59 @@ function GenFunctionDocumentation (getDef: any): string {
   return functionDocumentation.trim ();
 }
 
-function GenFunctionParameterSignature (getDef: any): string {
-  let parameterSignature = '';
-  let parameterSeparator = '';
-  for (const param of getDef.parameters) {
-    // handle integer and float type conversion to JS number
-    parameterSignature += `${parameterSeparator}${param.name.toLowerCase ()}: ${(param.type === 'integer' || param.type === 'float') ? 'number' : param.type}`;
-    parameterSeparator = ', ';
+function GenCustomHeaderEntries (requestDefinition: any) {
+  const customHeaders = [];
+
+  for (const parameter of requestDefinition.parameters) {
+    if (parameter.in === 'header') {
+      customHeaders.push (`'${parameter .name}': '${parameter.default}'`);
+    }
   }
 
-  return parameterSignature;
+  return customHeaders;
 }
 
-function GenerateModule (functionsString: string): string {
+function GenFunctionParameterSignature (apiRequestDefinition: any): string {
+
+  let parameterPathItems = '';
+  let parameterPathItemsSeparator = '';
+  let parameterQueryItems = '';
+  let parameterQueryItemsSeparator = '';
+  let parametersOptionalItems = '';
+  let parametersOptionalItemsSeparator = '';
+
+  for (const param of apiRequestDefinition.parameters) {
+    if (param.in === 'query' || param.in === 'path') {
+      // convert numeric swagger supplied types to be represented as JS type 'number'
+      const paramType = (param.type === 'integer' || param.type === 'float') ? 'number' : param.type;
+      if ( param.in === 'query' && param.required === false) {
+        const paramName = param.name.toLowerCase () + '?';
+        parametersOptionalItems += `${parametersOptionalItemsSeparator}${paramName}: ${paramType}`;
+        parametersOptionalItemsSeparator = ', ';
+      } else if (param.in === 'query' && param.required === true) {
+        const paramName = param.name.toLowerCase ();
+        parameterQueryItems += `${parameterQueryItemsSeparator}${paramName}: ${paramType}`;
+        parameterQueryItemsSeparator = ', ';
+      } else if (param.in === 'path') {
+        const paramName = param.name.toLowerCase ();
+        parameterPathItems += `${parameterPathItemsSeparator}${paramName}: ${paramType}`;
+        parameterPathItemsSeparator = ', ';
+      }
+      // TODO: handle path parameters that are not required? apped them to the end of the optionals?
+    }
+  }
+  if (parameterPathItems.length && (parameterQueryItems.length || parametersOptionalItems.length)) {
+    parameterPathItems = `${parameterPathItems}, `;
+  }
+  if (parameterQueryItems.length && parametersOptionalItems.length) {
+    parameterQueryItems = `${parameterQueryItems}, `;
+  }
+
+  // url path params first, query params, then optional query params last
+  return parameterPathItems + parameterQueryItems + parametersOptionalItems;
+}
+
+function GenerateModule (functionsString: string, apiClientName: string): string {
 
   const templateInputs = {
     functions: functionsString
@@ -152,6 +194,13 @@ function GenerateModule (functionsString: string): string {
 
   const moduleString = mustache.render (moduleTemplate, templateInputs);
   console.log (`DEBUG -- templateInputs ${require ('util').inspect (templateInputs, {colors: true, depth: 2})}`);
+  if ( ! fs.existsSync (`./src/`)) {
+    fs.mkdirSync (`./src`);
+  }
+  if ( ! fs.existsSync (`./src/${apiClientName}/`)) {
+    fs.mkdirSync (`./src/${apiClientName}`);
+  }
+  fs.writeFileSync ( `./src/${apiClientName}/${apiClientName}.ts`, moduleString);
 
   return moduleString;
 }

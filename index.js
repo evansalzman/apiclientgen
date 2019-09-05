@@ -18,7 +18,6 @@ async function GenerateModuleTEST () {
 
   const loadJsonResponse = await apiclientget.LoadSwaggerJson ('https://stage.tdmtables.wdprapps.disney.com/docs/TDMTables-V1-user.json');
   const functionsString = await apiclientget.GenerateClientCalls (loadJsonResponse, 'TdmTablesClient'); // TODO: make the client lib name a passed in param
-  const moduleString = await apiclientget.GenerateModule (functionsString);
-  fs.writeFileSync ('./src/TdmTablesClient.ts', moduleString);
+  const moduleString = await apiclientget.GenerateModule (functionsString, 'TdmClient');
 }
 GenerateModuleTEST ();
