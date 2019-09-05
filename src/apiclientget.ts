@@ -7,6 +7,7 @@ mustache.escape =  (text) => text;
 
 const moduleTemplate = fs.readFileSync ('./data/templates/moduleTemplateApiClient.mustache', 'utf8');
 const functionTemplateGET = fs.readFileSync ('./data/templates/functionTemplateGET.mustache', 'utf8');
+const functionTemplatePOST = fs.readFileSync ('./data/templates/functionTemplatePOST.mustache', 'utf8');
 
 /**
  * Load the swagger json document describing the API
@@ -50,7 +51,7 @@ async function GenerateClientCalls (swaggerJson: any, clientLibraryName: string)
               functions += CreateGetFunction (path, swaggerJson.paths[path][method], clientLibraryName);
               break;
             case 'post':
-              //
+              functions += CreatePostFunction (path, swaggerJson.paths[path][method], clientLibraryName);
               break;
             case 'put':
               //
@@ -73,9 +74,59 @@ async function GenerateClientCalls (swaggerJson: any, clientLibraryName: string)
 
 }
 
+function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
+
+  const logMessagePrefix = 'CreatePostFunction() ';
+
+  // break path into an array, and capitalize each array element
+  const pathArray = path.split ('/');
+  for (let i = 0; i < pathArray.length; i++) {
+    if (pathArray[i].charAt (0).match (/\{/)) {
+      // uppercase the second char, char one is a curly brace
+      pathArray[i] = pathArray[i].charAt (1).toUpperCase () + pathArray[i].slice (2);
+      // prefix the 'filter name' with By (e.g. ByColumnName) and remove the curly braces
+      pathArray[i] = 'By' + pathArray[i].replace ('{', '').replace ('}', '');
+    }
+    if (pathArray[i].charAt (0).match (/[a-zA-z]/)) {
+      pathArray[i] = pathArray[i].charAt (0).toUpperCase () + pathArray[i].slice (1);
+    }
+  }
+  // join the array elements into a single camelcase word, TODO: Create an optional map (API path => ReadableName) to allow better function names
+  const functionName = 'Post' + pathArray.join ('');
+
+  const parameterSignature = GenFunctionParameterSignature (apiRequestDefinition);
+
+  const functionDocumentation = GenFunctionDocumentation (apiRequestDefinition);
+
+  let headerAccept = '';
+  for (const produces of apiRequestDefinition.produces) {
+    if (produces.toLowerCase ().includes ('application/json')) {
+      headerAccept = `'Accept': 'application/json'`;
+    }
+  }
+  const headersCustom = GenCustomHeaderEntries (apiRequestDefinition);
+  headersCustom.concat (headerAccept);
+
+    // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${var})
+  const pathUpdated = path.replace (/\{/g, '${');
+
+  const templateInputs = {
+    clientLibraryName,
+    endpointPath: `${pathUpdated}`,
+    functionDocumentation,
+    functionName,
+    headersCustom,
+    parameterSignature
+  };
+
+  const functionString = mustache.render (functionTemplatePOST, templateInputs);
+
+  return functionString;
+}
+
 function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
 
-  const logMessagePrefix = 'CreateGetMethod() ';
+  const logMessagePrefix = 'CreateGetFunction() ';
 
   // break path into an array, and capitalize each array element
   const pathArray = path.split ('/');
@@ -106,9 +157,12 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
   const headersCustom = GenCustomHeaderEntries (apiRequestDefinition);
   headersCustom.push (headerAccept);
 
+  // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${var})
+  const pathUpdated = path.replace (/\{/g, '${');
+
   const templateInputs = {
     clientLibraryName,
-    endpointPath: `${path}`,
+    endpointPath: `${pathUpdated}`,
     functionDocumentation,
     functionName,
     headersCustom,
@@ -160,15 +214,15 @@ function GenFunctionParameterSignature (apiRequestDefinition: any): string {
       // convert numeric swagger supplied types to be represented as JS type 'number'
       const paramType = (param.type === 'integer' || param.type === 'float') ? 'number' : param.type;
       if ( param.in === 'query' && param.required === false) {
-        const paramName = param.name.toLowerCase () + '?';
+        const paramName = param.name + '?';
         parametersOptionalItems += `${parametersOptionalItemsSeparator}${paramName}: ${paramType}`;
         parametersOptionalItemsSeparator = ', ';
       } else if (param.in === 'query' && param.required === true) {
-        const paramName = param.name.toLowerCase ();
+        const paramName = param.name;
         parameterQueryItems += `${parameterQueryItemsSeparator}${paramName}: ${paramType}`;
         parameterQueryItemsSeparator = ', ';
       } else if (param.in === 'path') {
-        const paramName = param.name.toLowerCase ();
+        const paramName = param.name;
         parameterPathItems += `${parameterPathItemsSeparator}${paramName}: ${paramType}`;
         parameterPathItemsSeparator = ', ';
       }

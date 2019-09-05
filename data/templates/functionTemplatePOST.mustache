@@ -13,7 +13,12 @@ async function {{functionName}} ({{parameterSignature}}) {
   const apiUri: string = '';
   const accessToken: string = '';
 
+  const body = {
+
+  };
+
   const options = {
+    body,
     headers: {
       {{#headersCustom}}
       {{.}},
@@ -22,7 +27,7 @@ async function {{functionName}} ({{parameterSignature}}) {
       'X-Conversation-Id': 'automated-testing-request-id'
     },
     json: true,
-    method: 'GET',
+    method: 'POST',
     url: `${config.apiServerUrl}${basePath}{{endpointPath}}`
   };
 

@@ -11,7 +11,7 @@ import * as log from 'winston';
  * @param startRow integer The first row to show, used for paging
  * @param pageSize integer The number of rows to return, used for paging
  */
-async function GetTdmtables (searchtext?: string, sortorder?: string, startrow?: number, pagesize?: number) {
+async function GetTdmtables (searchText?: string, sortOrder?: string, startRow?: number, pageSize?: number) {
 
   const logMessagePrefix = 'TdmTablesClient.GetTdmtables() ';
 
@@ -48,7 +48,56 @@ async function GetTdmtables (searchtext?: string, sortorder?: string, startrow?:
     });
 
 }
-exports.GetTdmtables = GetTdmtables; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetTdmtables = GetTdmtables;
+
+/**
+ * Add new TDM Table
+ * Allows authorized user to add new TDM Table definition.
+ * @param Authorization string OAuth2 token as Bearer type
+ * @param body undefined Minimal TDM Table Definition
+ */
+async function PostTdmtables () {
+
+  const logMessagePrefix = 'TdmTablesClient.PostTdmtables() ';
+
+  const config = {
+    apiServerUrl: ''
+  };
+  const basePath: string = '';
+  const apiUri: string = '';
+  const accessToken: string = '';
+
+  const body = {
+
+  };
+
+  const options = {
+    body,
+    headers: {
+      'Authorization': 'Bearer YourTokenHere',
+      'User-Agent': 'automated-testing-request',
+      'X-Conversation-Id': 'automated-testing-request-id'
+    },
+    json: true,
+    method: 'POST',
+    url: `${config.apiServerUrl}${basePath}/tdmtables`
+  };
+
+  return await requestPromise (options)
+    .then ((response: any) => {
+      log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+      return response;
+    })
+    . catch ( (errorResponse: any) => {
+      log.info (`$[logMessagePrefix] There was an error calling the API.`);
+      log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+      return errorResponse;
+    });
+
+}
+exports.PostTdmtables = PostTdmtables;
 
 /**
  * Retrieves an existing TDM table
@@ -56,7 +105,7 @@ exports.GetTdmtables = GetTdmtables; // TODO: Create an optional map (API path =
  * @param Authorization string OAuth2 token as Bearer type
  * @param tdmTableId string TDM Table ID to retrieve
  */
-async function GetTdmtablesByTdmTableId (tdmtableid: string) {
+async function GetTdmtablesByTdmTableId (tdmTableId: string) {
 
   const logMessagePrefix = 'TdmTablesClient.GetTdmtablesByTdmTableId() ';
 
@@ -76,7 +125,7 @@ async function GetTdmtablesByTdmTableId (tdmtableid: string) {
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/tdmtables/{tdmTableId}`
+    url: `${config.apiServerUrl}${basePath}/tdmtables/${tdmTableId}`
   };
 
   return await requestPromise (options)
@@ -93,7 +142,7 @@ async function GetTdmtablesByTdmTableId (tdmtableid: string) {
     });
 
 }
-exports.GetTdmtablesByTdmTableId = GetTdmtablesByTdmTableId; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetTdmtablesByTdmTableId = GetTdmtablesByTdmTableId;
 
 /**
  * Retrieves an existing TDM table
@@ -101,7 +150,7 @@ exports.GetTdmtablesByTdmTableId = GetTdmtablesByTdmTableId; // TODO: Create an 
  * @param Authorization string OAuth2 token as Bearer type
  * @param tdmTableName string TDM Table Name to retrieve
  */
-async function GetTdmtablesTablenameByTdmTableName (tdmtablename: string) {
+async function GetTdmtablesTablenameByTdmTableName (tdmTableName: string) {
 
   const logMessagePrefix = 'TdmTablesClient.GetTdmtablesTablenameByTdmTableName() ';
 
@@ -121,7 +170,7 @@ async function GetTdmtablesTablenameByTdmTableName (tdmtablename: string) {
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/tdmtables/tablename/{tdmTableName}`
+    url: `${config.apiServerUrl}${basePath}/tdmtables/tablename/${tdmTableName}`
   };
 
   return await requestPromise (options)
@@ -138,7 +187,7 @@ async function GetTdmtablesTablenameByTdmTableName (tdmtablename: string) {
     });
 
 }
-exports.GetTdmtablesTablenameByTdmTableName = GetTdmtablesTablenameByTdmTableName; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetTdmtablesTablenameByTdmTableName = GetTdmtablesTablenameByTdmTableName;
 
 /**
  * Retrieves a TDM table id using the table name
@@ -146,7 +195,7 @@ exports.GetTdmtablesTablenameByTdmTableName = GetTdmtablesTablenameByTdmTableNam
  * @param Authorization string OAuth2 token as Bearer type
  * @param tdmTableName string TDM Table Name to retrieve
  */
-async function GetTdmtablesIdByTdmTableName (tdmtablename: string) {
+async function GetTdmtablesIdByTdmTableName (tdmTableName: string) {
 
   const logMessagePrefix = 'TdmTablesClient.GetTdmtablesIdByTdmTableName() ';
 
@@ -166,7 +215,7 @@ async function GetTdmtablesIdByTdmTableName (tdmtablename: string) {
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/tdmtables/id/{tdmTableName}`
+    url: `${config.apiServerUrl}${basePath}/tdmtables/id/${tdmTableName}`
   };
 
   return await requestPromise (options)
@@ -183,7 +232,7 @@ async function GetTdmtablesIdByTdmTableName (tdmtablename: string) {
     });
 
 }
-exports.GetTdmtablesIdByTdmTableName = GetTdmtablesIdByTdmTableName; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetTdmtablesIdByTdmTableName = GetTdmtablesIdByTdmTableName;
 
 /**
  * Retrieves a TDM table name using the table ID
@@ -191,7 +240,7 @@ exports.GetTdmtablesIdByTdmTableName = GetTdmtablesIdByTdmTableName; // TODO: Cr
  * @param Authorization string OAuth2 token as Bearer type
  * @param tdmTableId string TDM Table ID to retrieve
  */
-async function GetTdmtablesNameByTdmTableId (tdmtableid: string) {
+async function GetTdmtablesNameByTdmTableId (tdmTableId: string) {
 
   const logMessagePrefix = 'TdmTablesClient.GetTdmtablesNameByTdmTableId() ';
 
@@ -211,7 +260,7 @@ async function GetTdmtablesNameByTdmTableId (tdmtableid: string) {
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/tdmtables/name/{tdmTableId}`
+    url: `${config.apiServerUrl}${basePath}/tdmtables/name/${tdmTableId}`
   };
 
   return await requestPromise (options)
@@ -228,7 +277,7 @@ async function GetTdmtablesNameByTdmTableId (tdmtableid: string) {
     });
 
 }
-exports.GetTdmtablesNameByTdmTableId = GetTdmtablesNameByTdmTableId; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetTdmtablesNameByTdmTableId = GetTdmtablesNameByTdmTableId;
 
 /**
  * List of Columns
@@ -241,7 +290,7 @@ exports.GetTdmtablesNameByTdmTableId = GetTdmtablesNameByTdmTableId; // TODO: Cr
  * @param startRow integer The first row to show, used for paging
  * @param pageSize integer The number of rows to return, used for paging
  */
-async function GetColumnsTableidByTdmTableId (tdmtableid: string, searchtext?: string, sortorder?: string, startrow?: number, pagesize?: number) {
+async function GetColumnsTableidByTdmTableId (tdmTableId: string, searchText?: string, sortOrder?: string, startRow?: number, pageSize?: number) {
 
   const logMessagePrefix = 'TdmTablesClient.GetColumnsTableidByTdmTableId() ';
 
@@ -261,7 +310,7 @@ async function GetColumnsTableidByTdmTableId (tdmtableid: string, searchtext?: s
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/columns/tableid/{tdmTableId}`
+    url: `${config.apiServerUrl}${basePath}/columns/tableid/${tdmTableId}`
   };
 
   return await requestPromise (options)
@@ -278,7 +327,57 @@ async function GetColumnsTableidByTdmTableId (tdmtableid: string, searchtext?: s
     });
 
 }
-exports.GetColumnsTableidByTdmTableId = GetColumnsTableidByTdmTableId; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetColumnsTableidByTdmTableId = GetColumnsTableidByTdmTableId;
+
+/**
+ * Add new Column
+ * Allows authorized user to add new Column definition.
+ * @param Authorization string OAuth2 token as Bearer type
+ * @param tdmTableId string TDM Table ID using these columns
+ * @param body undefined Column Definition
+ */
+async function PostColumnsTableidByTdmTableId (tdmTableId: string) {
+
+  const logMessagePrefix = 'TdmTablesClient.PostColumnsTableidByTdmTableId() ';
+
+  const config = {
+    apiServerUrl: ''
+  };
+  const basePath: string = '';
+  const apiUri: string = '';
+  const accessToken: string = '';
+
+  const body = {
+
+  };
+
+  const options = {
+    body,
+    headers: {
+      'Authorization': 'Bearer YourTokenHere',
+      'User-Agent': 'automated-testing-request',
+      'X-Conversation-Id': 'automated-testing-request-id'
+    },
+    json: true,
+    method: 'POST',
+    url: `${config.apiServerUrl}${basePath}/columns/tableid/${tdmTableId}`
+  };
+
+  return await requestPromise (options)
+    .then ((response: any) => {
+      log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+      return response;
+    })
+    . catch ( (errorResponse: any) => {
+      log.info (`$[logMessagePrefix] There was an error calling the API.`);
+      log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+      return errorResponse;
+    });
+
+}
+exports.PostColumnsTableidByTdmTableId = PostColumnsTableidByTdmTableId;
 
 /**
  * List of Columns
@@ -291,7 +390,7 @@ exports.GetColumnsTableidByTdmTableId = GetColumnsTableidByTdmTableId; // TODO: 
  * @param startRow integer The first row to show, used for paging
  * @param pageSize integer The number of rows to return, used for paging
  */
-async function GetColumnsTablenameByTdmTableName (tdmtablename: string, searchtext?: string, sortorder?: string, startrow?: number, pagesize?: number) {
+async function GetColumnsTablenameByTdmTableName (tdmTableName: string, searchText?: string, sortOrder?: string, startRow?: number, pageSize?: number) {
 
   const logMessagePrefix = 'TdmTablesClient.GetColumnsTablenameByTdmTableName() ';
 
@@ -311,7 +410,7 @@ async function GetColumnsTablenameByTdmTableName (tdmtablename: string, searchte
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/columns/tablename/{tdmTableName}`
+    url: `${config.apiServerUrl}${basePath}/columns/tablename/${tdmTableName}`
   };
 
   return await requestPromise (options)
@@ -328,7 +427,57 @@ async function GetColumnsTablenameByTdmTableName (tdmtablename: string, searchte
     });
 
 }
-exports.GetColumnsTablenameByTdmTableName = GetColumnsTablenameByTdmTableName; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetColumnsTablenameByTdmTableName = GetColumnsTablenameByTdmTableName;
+
+/**
+ * Add new Column
+ * Allows authorized user to add new Column definition.
+ * @param Authorization string OAuth2 token as Bearer type
+ * @param tdmTableName string TDM Table Name using these columns
+ * @param body undefined Column Definition
+ */
+async function PostColumnsTablenameByTdmTableName (tdmTableName: string) {
+
+  const logMessagePrefix = 'TdmTablesClient.PostColumnsTablenameByTdmTableName() ';
+
+  const config = {
+    apiServerUrl: ''
+  };
+  const basePath: string = '';
+  const apiUri: string = '';
+  const accessToken: string = '';
+
+  const body = {
+
+  };
+
+  const options = {
+    body,
+    headers: {
+      'Authorization': 'Bearer YourTokenHere',
+      'User-Agent': 'automated-testing-request',
+      'X-Conversation-Id': 'automated-testing-request-id'
+    },
+    json: true,
+    method: 'POST',
+    url: `${config.apiServerUrl}${basePath}/columns/tablename/${tdmTableName}`
+  };
+
+  return await requestPromise (options)
+    .then ((response: any) => {
+      log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+      return response;
+    })
+    . catch ( (errorResponse: any) => {
+      log.info (`$[logMessagePrefix] There was an error calling the API.`);
+      log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+      return errorResponse;
+    });
+
+}
+exports.PostColumnsTablenameByTdmTableName = PostColumnsTablenameByTdmTableName;
 
 /**
  * Retrieves an existing Column
@@ -336,7 +485,7 @@ exports.GetColumnsTablenameByTdmTableName = GetColumnsTablenameByTdmTableName; /
  * @param Authorization string OAuth2 token as Bearer type
  * @param columnId string Column ID to retrieve
  */
-async function GetColumnsByColumnId (columnid: string) {
+async function GetColumnsByColumnId (columnId: string) {
 
   const logMessagePrefix = 'TdmTablesClient.GetColumnsByColumnId() ';
 
@@ -356,7 +505,7 @@ async function GetColumnsByColumnId (columnid: string) {
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/columns/{columnId}`
+    url: `${config.apiServerUrl}${basePath}/columns/${columnId}`
   };
 
   return await requestPromise (options)
@@ -373,7 +522,7 @@ async function GetColumnsByColumnId (columnid: string) {
     });
 
 }
-exports.GetColumnsByColumnId = GetColumnsByColumnId; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetColumnsByColumnId = GetColumnsByColumnId;
 
 /**
  * List of Column Types
@@ -417,7 +566,7 @@ async function GetColumntypes () {
     });
 
 }
-exports.GetColumntypes = GetColumntypes; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetColumntypes = GetColumntypes;
 
 /**
  * List of Rows
@@ -431,7 +580,7 @@ exports.GetColumntypes = GetColumntypes; // TODO: Create an optional map (API pa
  * @param pageSize integer The number of rows to return, used for paging
  * @param includeInActiveColumns boolean If in-active columns should be included with row information
  */
-async function GetRowsTableidByTdmTableId (tdmtableid: string, searchtext?: string, sortorder?: string, startrow?: number, pagesize?: number, includeinactivecolumns?: boolean) {
+async function GetRowsTableidByTdmTableId (tdmTableId: string, searchText?: string, sortOrder?: string, startRow?: number, pageSize?: number, includeInActiveColumns?: boolean) {
 
   const logMessagePrefix = 'TdmTablesClient.GetRowsTableidByTdmTableId() ';
 
@@ -451,7 +600,7 @@ async function GetRowsTableidByTdmTableId (tdmtableid: string, searchtext?: stri
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/rows/tableid/{tdmTableId}`
+    url: `${config.apiServerUrl}${basePath}/rows/tableid/${tdmTableId}`
   };
 
   return await requestPromise (options)
@@ -468,7 +617,57 @@ async function GetRowsTableidByTdmTableId (tdmtableid: string, searchtext?: stri
     });
 
 }
-exports.GetRowsTableidByTdmTableId = GetRowsTableidByTdmTableId; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetRowsTableidByTdmTableId = GetRowsTableidByTdmTableId;
+
+/**
+ * Add new Row
+ * Allows authorized user to add new Row.
+ * @param Authorization string OAuth2 token as Bearer type
+ * @param tdmTableId string TDM Table ID to add row
+ * @param body undefined Row Information
+ */
+async function PostRowsTableidByTdmTableId (tdmTableId: string) {
+
+  const logMessagePrefix = 'TdmTablesClient.PostRowsTableidByTdmTableId() ';
+
+  const config = {
+    apiServerUrl: ''
+  };
+  const basePath: string = '';
+  const apiUri: string = '';
+  const accessToken: string = '';
+
+  const body = {
+
+  };
+
+  const options = {
+    body,
+    headers: {
+      'Authorization': 'Bearer YourTokenHere',
+      'User-Agent': 'automated-testing-request',
+      'X-Conversation-Id': 'automated-testing-request-id'
+    },
+    json: true,
+    method: 'POST',
+    url: `${config.apiServerUrl}${basePath}/rows/tableid/${tdmTableId}`
+  };
+
+  return await requestPromise (options)
+    .then ((response: any) => {
+      log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+      return response;
+    })
+    . catch ( (errorResponse: any) => {
+      log.info (`$[logMessagePrefix] There was an error calling the API.`);
+      log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+      return errorResponse;
+    });
+
+}
+exports.PostRowsTableidByTdmTableId = PostRowsTableidByTdmTableId;
 
 /**
  * List of Rows
@@ -482,7 +681,7 @@ exports.GetRowsTableidByTdmTableId = GetRowsTableidByTdmTableId; // TODO: Create
  * @param pageSize integer The number of rows to return, used for paging
  * @param includeInActiveColumns boolean If in-active columns should be included with row information
  */
-async function GetRowsTableidSearchByTdmTableIdBySearchParam (tdmtableid: string, searchparam: string, sortorder?: string, startrow?: number, pagesize?: number, includeinactivecolumns?: boolean) {
+async function GetRowsTableidSearchByTdmTableIdBySearchParam (tdmTableId: string, searchParam: string, sortOrder?: string, startRow?: number, pageSize?: number, includeInActiveColumns?: boolean) {
 
   const logMessagePrefix = 'TdmTablesClient.GetRowsTableidSearchByTdmTableIdBySearchParam() ';
 
@@ -502,7 +701,7 @@ async function GetRowsTableidSearchByTdmTableIdBySearchParam (tdmtableid: string
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/rows/tableid/search/{tdmTableId}/{searchParam}`
+    url: `${config.apiServerUrl}${basePath}/rows/tableid/search/${tdmTableId}/${searchParam}`
   };
 
   return await requestPromise (options)
@@ -519,7 +718,7 @@ async function GetRowsTableidSearchByTdmTableIdBySearchParam (tdmtableid: string
     });
 
 }
-exports.GetRowsTableidSearchByTdmTableIdBySearchParam = GetRowsTableidSearchByTdmTableIdBySearchParam; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetRowsTableidSearchByTdmTableIdBySearchParam = GetRowsTableidSearchByTdmTableIdBySearchParam;
 
 /**
  * List of Rows
@@ -533,7 +732,7 @@ exports.GetRowsTableidSearchByTdmTableIdBySearchParam = GetRowsTableidSearchByTd
  * @param pageSize integer The number of rows to return, used for paging
  * @param includeInActiveColumns boolean If in-active columns should be included with row information
  */
-async function GetRowsTablenameByTdmTableName (tdmtablename: string, searchtext?: string, sortorder?: string, startrow?: number, pagesize?: number, includeinactivecolumns?: boolean) {
+async function GetRowsTablenameByTdmTableName (tdmTableName: string, searchText?: string, sortOrder?: string, startRow?: number, pageSize?: number, includeInActiveColumns?: boolean) {
 
   const logMessagePrefix = 'TdmTablesClient.GetRowsTablenameByTdmTableName() ';
 
@@ -553,7 +752,7 @@ async function GetRowsTablenameByTdmTableName (tdmtablename: string, searchtext?
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/rows/tablename/{tdmTableName}`
+    url: `${config.apiServerUrl}${basePath}/rows/tablename/${tdmTableName}`
   };
 
   return await requestPromise (options)
@@ -570,7 +769,57 @@ async function GetRowsTablenameByTdmTableName (tdmtablename: string, searchtext?
     });
 
 }
-exports.GetRowsTablenameByTdmTableName = GetRowsTablenameByTdmTableName; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetRowsTablenameByTdmTableName = GetRowsTablenameByTdmTableName;
+
+/**
+ * Add new Row
+ * Allows authorized user to add new Row.
+ * @param Authorization string OAuth2 token as Bearer type
+ * @param tdmTableName string TDM Table name to add row
+ * @param body undefined Row Information
+ */
+async function PostRowsTablenameByTdmTableName (tdmTableName: string) {
+
+  const logMessagePrefix = 'TdmTablesClient.PostRowsTablenameByTdmTableName() ';
+
+  const config = {
+    apiServerUrl: ''
+  };
+  const basePath: string = '';
+  const apiUri: string = '';
+  const accessToken: string = '';
+
+  const body = {
+
+  };
+
+  const options = {
+    body,
+    headers: {
+      'Authorization': 'Bearer YourTokenHere',
+      'User-Agent': 'automated-testing-request',
+      'X-Conversation-Id': 'automated-testing-request-id'
+    },
+    json: true,
+    method: 'POST',
+    url: `${config.apiServerUrl}${basePath}/rows/tablename/${tdmTableName}`
+  };
+
+  return await requestPromise (options)
+    .then ((response: any) => {
+      log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+      return response;
+    })
+    . catch ( (errorResponse: any) => {
+      log.info (`$[logMessagePrefix] There was an error calling the API.`);
+      log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+      return errorResponse;
+    });
+
+}
+exports.PostRowsTablenameByTdmTableName = PostRowsTablenameByTdmTableName;
 
 /**
  * List of Rows
@@ -584,7 +833,7 @@ exports.GetRowsTablenameByTdmTableName = GetRowsTablenameByTdmTableName; // TODO
  * @param pageSize integer The number of rows to return, used for paging
  * @param includeInActiveColumns boolean If in-active columns should be included with row information
  */
-async function GetRowsTablenameSearchByTdmTableNameBySearchParam (tdmtablename: string, searchparam: string, sortorder?: string, startrow?: number, pagesize?: number, includeinactivecolumns?: boolean) {
+async function GetRowsTablenameSearchByTdmTableNameBySearchParam (tdmTableName: string, searchParam: string, sortOrder?: string, startRow?: number, pageSize?: number, includeInActiveColumns?: boolean) {
 
   const logMessagePrefix = 'TdmTablesClient.GetRowsTablenameSearchByTdmTableNameBySearchParam() ';
 
@@ -604,7 +853,7 @@ async function GetRowsTablenameSearchByTdmTableNameBySearchParam (tdmtablename: 
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/rows/tablename/search/{tdmTableName}/{searchParam}`
+    url: `${config.apiServerUrl}${basePath}/rows/tablename/search/${tdmTableName}/${searchParam}`
   };
 
   return await requestPromise (options)
@@ -621,7 +870,7 @@ async function GetRowsTablenameSearchByTdmTableNameBySearchParam (tdmtablename: 
     });
 
 }
-exports.GetRowsTablenameSearchByTdmTableNameBySearchParam = GetRowsTablenameSearchByTdmTableNameBySearchParam; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetRowsTablenameSearchByTdmTableNameBySearchParam = GetRowsTablenameSearchByTdmTableNameBySearchParam;
 
 /**
  * Retrieve a single Row
@@ -631,7 +880,7 @@ exports.GetRowsTablenameSearchByTdmTableNameBySearchParam = GetRowsTablenameSear
  * @param rowId string Row ID to retrieve
  * @param includeInActiveColumns boolean If in-active columns should be included with row information
  */
-async function GetRowsTableidByTdmTableIdByRowId (tdmtableid: string, rowid: string, includeinactivecolumns?: boolean) {
+async function GetRowsTableidByTdmTableIdByRowId (tdmTableId: string, rowId: string, includeInActiveColumns?: boolean) {
 
   const logMessagePrefix = 'TdmTablesClient.GetRowsTableidByTdmTableIdByRowId() ';
 
@@ -651,7 +900,7 @@ async function GetRowsTableidByTdmTableIdByRowId (tdmtableid: string, rowid: str
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/rows/tableid/{tdmTableId}/{rowId}`
+    url: `${config.apiServerUrl}${basePath}/rows/tableid/${tdmTableId}/${rowId}`
   };
 
   return await requestPromise (options)
@@ -668,7 +917,7 @@ async function GetRowsTableidByTdmTableIdByRowId (tdmtableid: string, rowid: str
     });
 
 }
-exports.GetRowsTableidByTdmTableIdByRowId = GetRowsTableidByTdmTableIdByRowId; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetRowsTableidByTdmTableIdByRowId = GetRowsTableidByTdmTableIdByRowId;
 
 /**
  * Count of the row in TDM Table.
@@ -677,7 +926,7 @@ exports.GetRowsTableidByTdmTableIdByRowId = GetRowsTableidByTdmTableIdByRowId; /
  * @param tdmTableName string TDM Table Name whose row count needs to be fetched
  * @param searchParam string Text used to limit results
  */
-async function GetRowsCountTablenameSearchByTdmTableNameBySearchParam (tdmtablename: string, searchparam: string) {
+async function GetRowsCountTablenameSearchByTdmTableNameBySearchParam (tdmTableName: string, searchParam: string) {
 
   const logMessagePrefix = 'TdmTablesClient.GetRowsCountTablenameSearchByTdmTableNameBySearchParam() ';
 
@@ -697,7 +946,7 @@ async function GetRowsCountTablenameSearchByTdmTableNameBySearchParam (tdmtablen
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/rows/count/tablename/search/{tdmTableName}/{searchParam}`
+    url: `${config.apiServerUrl}${basePath}/rows/count/tablename/search/${tdmTableName}/${searchParam}`
   };
 
   return await requestPromise (options)
@@ -714,7 +963,7 @@ async function GetRowsCountTablenameSearchByTdmTableNameBySearchParam (tdmtablen
     });
 
 }
-exports.GetRowsCountTablenameSearchByTdmTableNameBySearchParam = GetRowsCountTablenameSearchByTdmTableNameBySearchParam; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetRowsCountTablenameSearchByTdmTableNameBySearchParam = GetRowsCountTablenameSearchByTdmTableNameBySearchParam;
 
 /**
  * Count of the row in TDM Table.
@@ -723,7 +972,7 @@ exports.GetRowsCountTablenameSearchByTdmTableNameBySearchParam = GetRowsCountTab
  * @param tdmTableId string TDM Table Id whose row count needs to be fetched
  * @param searchParam string Text used to limit results
  */
-async function GetRowsCountTableidSearchByTdmTableIdBySearchParam (tdmtableid: string, searchparam: string) {
+async function GetRowsCountTableidSearchByTdmTableIdBySearchParam (tdmTableId: string, searchParam: string) {
 
   const logMessagePrefix = 'TdmTablesClient.GetRowsCountTableidSearchByTdmTableIdBySearchParam() ';
 
@@ -743,7 +992,7 @@ async function GetRowsCountTableidSearchByTdmTableIdBySearchParam (tdmtableid: s
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/rows/count/tableid/search/{tdmTableId}/{searchParam}`
+    url: `${config.apiServerUrl}${basePath}/rows/count/tableid/search/${tdmTableId}/${searchParam}`
   };
 
   return await requestPromise (options)
@@ -760,7 +1009,7 @@ async function GetRowsCountTableidSearchByTdmTableIdBySearchParam (tdmtableid: s
     });
 
 }
-exports.GetRowsCountTableidSearchByTdmTableIdBySearchParam = GetRowsCountTableidSearchByTdmTableIdBySearchParam; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetRowsCountTableidSearchByTdmTableIdBySearchParam = GetRowsCountTableidSearchByTdmTableIdBySearchParam;
 
 /**
  * Count of the row in Archive Table.
@@ -769,7 +1018,7 @@ exports.GetRowsCountTableidSearchByTdmTableIdBySearchParam = GetRowsCountTableid
  * @param tdmTableName string TDM Table Name whose archived row count needs to be fetched
  * @param searchParam string Text used to limit results
  */
-async function GetRowsArchiveCountTablenameSearchByTdmTableNameBySearchParam (tdmtablename: string, searchparam: string) {
+async function GetRowsArchiveCountTablenameSearchByTdmTableNameBySearchParam (tdmTableName: string, searchParam: string) {
 
   const logMessagePrefix = 'TdmTablesClient.GetRowsArchiveCountTablenameSearchByTdmTableNameBySearchParam() ';
 
@@ -789,7 +1038,7 @@ async function GetRowsArchiveCountTablenameSearchByTdmTableNameBySearchParam (td
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/rows/archive/count/tablename/search/{tdmTableName}/{searchParam}`
+    url: `${config.apiServerUrl}${basePath}/rows/archive/count/tablename/search/${tdmTableName}/${searchParam}`
   };
 
   return await requestPromise (options)
@@ -806,7 +1055,7 @@ async function GetRowsArchiveCountTablenameSearchByTdmTableNameBySearchParam (td
     });
 
 }
-exports.GetRowsArchiveCountTablenameSearchByTdmTableNameBySearchParam = GetRowsArchiveCountTablenameSearchByTdmTableNameBySearchParam; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetRowsArchiveCountTablenameSearchByTdmTableNameBySearchParam = GetRowsArchiveCountTablenameSearchByTdmTableNameBySearchParam;
 
 /**
  * Count of the row in Archive Table.
@@ -815,7 +1064,7 @@ exports.GetRowsArchiveCountTablenameSearchByTdmTableNameBySearchParam = GetRowsA
  * @param tdmTableId string TDM Table Id whose archived row count needs to be fetched
  * @param searchParam string Text used to limit results
  */
-async function GetRowsArchiveCountTableidSearchByTdmTableIdBySearchParam (tdmtableid: string, searchparam: string) {
+async function GetRowsArchiveCountTableidSearchByTdmTableIdBySearchParam (tdmTableId: string, searchParam: string) {
 
   const logMessagePrefix = 'TdmTablesClient.GetRowsArchiveCountTableidSearchByTdmTableIdBySearchParam() ';
 
@@ -835,7 +1084,7 @@ async function GetRowsArchiveCountTableidSearchByTdmTableIdBySearchParam (tdmtab
     },
     json: true,
     method: 'GET',
-    url: `${config.apiServerUrl}${basePath}/rows/archive/count/tableid/search/{tdmTableId}/{searchParam}`
+    url: `${config.apiServerUrl}${basePath}/rows/archive/count/tableid/search/${tdmTableId}/${searchParam}`
   };
 
   return await requestPromise (options)
@@ -852,4 +1101,4 @@ async function GetRowsArchiveCountTableidSearchByTdmTableIdBySearchParam (tdmtab
     });
 
 }
-exports.GetRowsArchiveCountTableidSearchByTdmTableIdBySearchParam = GetRowsArchiveCountTableidSearchByTdmTableIdBySearchParam; // TODO: Create an optional map (API path => ReadableName) to allow better function names
+exports.GetRowsArchiveCountTableidSearchByTdmTableIdBySearchParam = GetRowsArchiveCountTableidSearchByTdmTableIdBySearchParam;
