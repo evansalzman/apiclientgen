@@ -1,0 +1,43 @@
+
+/**
+ {{functionDocumentation}}
+ */
+async function {{functionName}} ({{parameterSignature}}) {
+
+  const logMessagePrefix = '{{clientLibraryName}}.{{functionName}}() ';
+
+  const config = {
+    apiServerUrl: ''
+  };
+  const basePath: string = '';
+  const apiUri: string = '';
+  const accessToken: string = '';
+
+  const options = {
+    headers: {
+      {{#headersCustom}}
+      {{.}},
+      {{/headersCustom}}
+      'User-Agent': 'automated-testing-request',
+      'X-Conversation-Id': 'automated-testing-request-id'
+    },
+    json: true,
+    method: 'GET',
+    url: `${config.apiServerUrl}${basePath}{{endpointPath}}`
+  };
+
+  return await requestPromise (options)
+    .then ((response: any) => {
+      log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+      return response;
+    })
+    . catch ( (errorResponse: any) => {
+      log.info (`$[logMessagePrefix] There was an error calling the API.`);
+      log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+      return errorResponse;
+    });
+
+}
+exports.{{functionName}} = {{functionName}}; // TODO: Create an optional map (API path => ReadableName) to allow better function names
