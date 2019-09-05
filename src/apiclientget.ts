@@ -11,7 +11,7 @@ async fuction {{functionName}} ({{parameterSignature}}) {
 
   const options = {{options}}
 
-  return await requestPromise.get (url)
+  return await requestPromise (options)
     .then ((response: any) => {
       log.debug(\`$[logMessagePrefix] API JSON response \${require ('util').inspect (response, {colors: true, depth: 2})}\`);
       return response;
@@ -121,7 +121,7 @@ function CreateGetFunction (path: string, getDef: any): string {
 
   const functionDocumentation = GenFunctionDocumentation (getDef);
 
-  const options = GenRequestOptions (getDef);
+  const options = GenRequestOptions (path, getDef);
 
   const functionString = getFunctionTemplate
     .replace ('{{functionDocumentation}}', functionDocumentation)
@@ -156,21 +156,22 @@ function GenFunctionParameterSignature (getDef: any): string {
   return parameterSignature;
 }
 
-function GenRequestOptions (requestDef: any): any {
+function GenRequestOptions (path: string, requestDef: any): string {
 
-  const logMessagePrefix  = 'apiclientget.GenRequestOptions() ';
+  // url values use of path.replace() function below replaces instances of swagger docs {variableName} with javascripts ${variableName}
+  const options = `{
+    headers: {
+      'Accept': 'application/json', // TODO: how to add this field ONLY when application/json is specified in array requestDef.get.produces[]
+      'Authorization': \`BEARER \${access_token}\`,
+      'User-Agent': 'automated-testing-request',
+      'X-Conversation-Id': 'automated-testing-request-id'
+    },
+    json: true,
+    method: 'GET',
+    url: \`\${config.apiServerUrl}\${basePath}${path.replace (/\{/g, '${')}\`
+  };`;
 
-  const options = {
-    Accept: requestDef.produces[0],
-    getFullResponse: false
-  };
-
-  for (const rtype of requestDef.produces) {
-    if (rtype.toLowerCase () === 'application/json') {
-      options.Accept = rtype;
-    }
-  }
-
+  return options;
 }
 
 exports.LoadSwaggerJson = LoadSwaggerJson;
