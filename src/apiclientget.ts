@@ -1,29 +1,12 @@
+import fs from 'fs';
+import mustache from 'mustache';
 import * as requestPromise from 'request-promise';
 
-let swaggerJson: any;
-const getFunctionTemplate = `
-/**
-{{functionDocumentation}}
-**/
-async fuction {{functionName}} ({{parameterSignature}}) {
+// disable mustache HTML escaping
+mustache.escape =  (text) => text;
 
-  const logMessagePrefix = '{{functionName}}() ';
-
-  const options = {{options}}
-
-  return await requestPromise (options)
-    .then ((response: any) => {
-      log.debug(\`$[logMessagePrefix] API JSON response \${require ('util').inspect (response, {colors: true, depth: 2})}\`);
-      return response;
-    })
-    . catch ( (errorResponse: any) => {
-      log.info(\`$[logMessagePrefix] There was an error calling the API.\`);
-      log.debug(\`$[logMessagePrefix] API JSON errorResponse \${require ('util').inspect (errorResponse, {colors: true, depth: 2})}\`);
-      return errorResponse;
-    };)
-
-}
-`;
+const moduleTemplate = fs.readFileSync ('./data/templates/moduleTemplateApiClient.mustache', 'utf8');
+const functionTemplateGET = fs.readFileSync ('./data/templates/functionTemplateGET.mustache', 'utf8');
 
 /**
  * Load the swagger json document describing the API
@@ -35,13 +18,9 @@ async function LoadSwaggerJson ( url: string ) {
   return await requestPromise.get (url)
   .then ((response: any) => {
 
-    //console.log (`DEBUG -- response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+    const responseJson = JSON.parse (response);
 
-    swaggerJson = JSON.parse (response);
-
-    //console.log (`DEBUG -- swaggerJson ${require ('util').inspect (swaggerJson, {colors: true, depth: 2})}`);
-
-    return response;
+    return responseJson;
   })
   .catch ((errorResponse: any) => {
 
@@ -51,7 +30,7 @@ async function LoadSwaggerJson ( url: string ) {
   });
 }
 
-async function GenerateClientCalls () {
+async function GenerateClientCalls (swaggerJson: any, clientLibraryName: string) {
 
   const logMessagePrefix = 'apiclientget.GenereateClientCalls() ';
 
@@ -60,16 +39,15 @@ async function GenerateClientCalls () {
 
     return new Error (`{logMessagePrefix} Swagger json load failure. Or did you not try to load it yet, hmmm?`);
   }
+
   let functions = '';
   for (const path in swaggerJson.paths) {
     if (swaggerJson.paths.hasOwnProperty (path)) {
-      // console.log (`DEBUG -- path ${require ('util').inspect (path, {colors: true, depth: 2})}`);
-      // console.log (`DEBUG -- swaggerJson.paths[path] ${require ('util').inspect (swaggerJson.paths[path], {colors: true, depth: 2})}`);
       for (const method in swaggerJson.paths[path]) {
         if (swaggerJson.paths[path].hasOwnProperty (method)) {
           switch (method){
             case 'get':
-              functions += CreateGetFunction (path, swaggerJson.paths[path][method]);
+              functions += CreateGetFunction (path, swaggerJson.paths[path][method], clientLibraryName);
               break;
             case 'post':
               //
@@ -95,11 +73,9 @@ async function GenerateClientCalls () {
 
 }
 
-function CreateGetFunction (path: string, getDef: any): string {
+function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
 
   const logMessagePrefix = 'CreateGetMethod() ';
-
-  console.log (`DEBUG -- getDef ${require ('util').inspect (getDef, {colors: true, depth: 2})}`);
 
   // break path into an array, and capitalize each array element
   const pathArray = path.split ('/');
@@ -117,31 +93,43 @@ function CreateGetFunction (path: string, getDef: any): string {
   // join the array elements into a single camelcase word
   const functionName = 'Get' + pathArray.join ('');
 
-  const parameterSignature = GenFunctionParameterSignature (getDef);
+  const parameterSignature = GenFunctionParameterSignature (apiRequestDefinition);
 
-  const functionDocumentation = GenFunctionDocumentation (getDef);
+  const functionDocumentation = GenFunctionDocumentation (apiRequestDefinition);
 
-  const options = GenRequestOptions (path, getDef);
+  let headerAccept = '';
+  for (const produces of apiRequestDefinition.produces) {
+    if (produces.toLowerCase ().includes ('application/json')) {
+      headerAccept = `'Accept': 'application/json',`;
+    }
+  }
 
-  const functionString = getFunctionTemplate
-    .replace ('{{functionDocumentation}}', functionDocumentation)
-    .replace ('{{functionName}}', functionName)
-    .replace ('{{parameterSignature}}', parameterSignature)
-    .replace ('{{options}}', options);
+  const templateInputs = {
+    clientLibraryName,
+    endpointPath: `${path}`,
+    functionDocumentation,
+    functionName,
+    headerAccept,
+    parameterSignature
+  };
+
+  const functionString = mustache.render (functionTemplateGET, templateInputs);
 
   return functionString;
 }
 
 function GenFunctionDocumentation (getDef: any): string {
   let functionDocumentation = ` * ${getDef.summary}\n`;
-  functionDocumentation += ` * ${getDef.description}\n`;
-  let paramSeparator = '';
+
+  const description = getDef.description.trim ();
+  for (const line of description.split (/\n/)) {
+    functionDocumentation += ` * ${line}\n`;
+  }
   for (const param of getDef.parameters) {
-    functionDocumentation += ` * @param ${param.name} ${param.type} ${param.description}\n`;
-    paramSeparator = ', ';
+    functionDocumentation += ` * @param ${param.name} ${param.type} ${param.description.trim ()}\n`;
   }
 
-  return functionDocumentation;
+  return functionDocumentation.trim ();
 }
 
 function GenFunctionParameterSignature (getDef: any): string {
@@ -156,23 +144,18 @@ function GenFunctionParameterSignature (getDef: any): string {
   return parameterSignature;
 }
 
-function GenRequestOptions (path: string, requestDef: any): string {
+function GenerateModule (functionsString: string): string {
 
-  // url values use of path.replace() function below replaces instances of swagger docs {variableName} with javascripts ${variableName}
-  const options = `{
-    headers: {
-      'Accept': 'application/json', // TODO: how to add this field ONLY when application/json is specified in array requestDef.get.produces[]
-      'Authorization': \`BEARER \${access_token}\`,
-      'User-Agent': 'automated-testing-request',
-      'X-Conversation-Id': 'automated-testing-request-id'
-    },
-    json: true,
-    method: 'GET',
-    url: \`\${config.apiServerUrl}\${basePath}${path.replace (/\{/g, '${')}\`
-  };`;
+  const templateInputs = {
+    functions: functionsString
+  };
 
-  return options;
+  const moduleString = mustache.render (moduleTemplate, templateInputs);
+  console.log (`DEBUG -- templateInputs ${require ('util').inspect (templateInputs, {colors: true, depth: 2})}`);
+
+  return moduleString;
 }
 
 exports.LoadSwaggerJson = LoadSwaggerJson;
 exports.GenerateClientCalls = GenerateClientCalls;
+exports.GenerateModule = GenerateModule;
