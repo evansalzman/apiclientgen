@@ -1,3 +1,4 @@
+import { listenerCount } from 'cluster';
 import fs from 'fs';
 import mustache from 'mustache';
 import * as requestPromise from 'request-promise';
@@ -174,18 +175,21 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
   return functionString;
 }
 
-function GenFunctionDocumentation (getDef: any): string {
-  let functionDocumentation = ` * ${getDef.summary}\n`;
+function GenFunctionDocumentation (getDef: any): string[] {
+  const functionDocumentation: string[] = [];
+  functionDocumentation.push (`* ${getDef.summary}`);
 
   const description = getDef.description.trim ();
   for (const line of description.split (/\n/)) {
-    functionDocumentation += ` * ${line}\n`;
+    functionDocumentation.push (`* ${line.trim ()}`);
   }
   for (const param of getDef.parameters) {
-    functionDocumentation += ` * @param ${param.name} ${param.type} ${param.description.trim ()}\n`;
+    if (param.in !== 'header') {
+      functionDocumentation.push (`* @param ${param.name} ${param.type} ${param.description.trim ()}`);
+    }
   }
 
-  return functionDocumentation.trim ();
+  return functionDocumentation;
 }
 
 function GenCustomHeaderEntries (requestDefinition: any) {
@@ -193,7 +197,7 @@ function GenCustomHeaderEntries (requestDefinition: any) {
 
   for (const parameter of requestDefinition.parameters) {
     if (parameter.in === 'header') {
-      customHeaders.push (`'${parameter .name}': '${parameter.default}'`);
+      customHeaders.push (`'${parameter .name}': \`\${${parameter.name.charAt (0).toLowerCase ()}${parameter.name.slice (1)}}\``);
     }
   }
 
@@ -210,25 +214,26 @@ function GenFunctionParameterSignature (apiRequestDefinition: any): string {
   let parametersOptionalItemsSeparator = '';
 
   for (const param of apiRequestDefinition.parameters) {
-    if (param.in === 'query' || param.in === 'path') {
       // convert numeric swagger supplied types to be represented as JS type 'number'
-      const paramType = (param.type === 'integer' || param.type === 'float') ? 'number' : param.type;
-      if ( param.in === 'query' && param.required === false) {
-        const paramName = param.name + '?';
-        parametersOptionalItems += `${parametersOptionalItemsSeparator}${paramName}: ${paramType}`;
-        parametersOptionalItemsSeparator = ', ';
-      } else if (param.in === 'query' && param.required === true) {
-        const paramName = param.name;
-        parameterQueryItems += `${parameterQueryItemsSeparator}${paramName}: ${paramType}`;
-        parameterQueryItemsSeparator = ', ';
-      } else if (param.in === 'path') {
-        const paramName = param.name;
-        parameterPathItems += `${parameterPathItemsSeparator}${paramName}: ${paramType}`;
-        parameterPathItemsSeparator = ', ';
-      }
-      // TODO: handle path parameters that are not required? apped them to the end of the optionals?
+    const paramType = (param.type === 'integer' || param.type === 'float') ? 'number' : param.type;
+    if ((param.in === 'query' || param.in === 'header') && param.required === false) {
+      const paramName = `${param.name.charAt (0).toLowerCase ()}${param.name.slice (1)}?`; // make sure the fist letter is lowercase
+      parametersOptionalItems += `${parametersOptionalItemsSeparator}${paramName}: ${paramType}`;
+      parametersOptionalItemsSeparator = ', ';
+    } else if ((param.in === 'query' || param.in === 'header') && param.required === true) {
+      const paramName = `${param.name.charAt (0).toLowerCase ()}${param.name.slice (1)}`; // make sure the fist letter is lowercase
+      parameterQueryItems += `${parameterQueryItemsSeparator}${paramName}: ${paramType}`;
+      console.log (`DEBUG -- adding parameterQueryItems ${require ('util').inspect (parameterQueryItems, {colors: true, depth: 2})}`);
+      parameterQueryItemsSeparator = ', ';
+    } else if (param.in === 'path') {
+      const paramName = param.name;
+      parameterPathItems += `${parameterPathItemsSeparator}${paramName}: ${paramType}`;
+      parameterPathItemsSeparator = ', ';
     }
+    // TODO: handle path parameters that are not required? apped them to the end of the optionals?
   }
+
+  // for each param list, add a comma if there are more params to follow (i.e. they are non-zero length)
   if (parameterPathItems.length && (parameterQueryItems.length || parametersOptionalItems.length)) {
     parameterPathItems = `${parameterPathItems}, `;
   }
@@ -243,11 +248,11 @@ function GenFunctionParameterSignature (apiRequestDefinition: any): string {
 function GenerateModule (functionsString: string, apiClientName: string): string {
 
   const templateInputs = {
+    apiClientName,
     functions: functionsString
   };
 
   const moduleString = mustache.render (moduleTemplate, templateInputs);
-  console.log (`DEBUG -- templateInputs ${require ('util').inspect (templateInputs, {colors: true, depth: 2})}`);
   if ( ! fs.existsSync (`./src/`)) {
     fs.mkdirSync (`./src`);
   }

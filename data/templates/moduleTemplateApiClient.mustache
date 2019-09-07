@@ -1,3 +1,14 @@
 import requestPromise from 'request-promise';
 import * as log from 'winston';
+
+export class {{apiClientName}} {
+
+  public apiServerUrl: string;
+
+  constructor (apiServerUrl: string) {
+    this.apiServerUrl = apiServerUrl;
+  }
+
 {{functions}}
+
+}

@@ -1,5 +1,4 @@
 const apiclientget = require ('./dist/apiclientget');
-const fs = require ('fs');
 
 // async function LoadSwaggerJsonTEST () {
 //   await apiclientget.LoadSwaggerJson ('https://stage.tdmtables.wdprapps.disney.com/docs/TDMTables-V1-user.json');
@@ -14,10 +13,12 @@ const fs = require ('fs');
 // }
 // GenerateClientCallsTEST ();
 
-async function GenerateModuleTEST () {
+async function GenerateModule () {
 
   const loadJsonResponse = await apiclientget.LoadSwaggerJson ('https://stage.tdmtables.wdprapps.disney.com/docs/TDMTables-V1-user.json');
-  const functionsString = await apiclientget.GenerateClientCalls (loadJsonResponse, 'TdmTablesClient'); // TODO: make the client lib name a passed in param
-  const moduleString = await apiclientget.GenerateModule (functionsString, 'TdmClient');
+  const functionsString = await apiclientget.GenerateClientCalls (loadJsonResponse, 'TdmClient'); // TODO: make the client lib name a passed in param
+  // const functionStringModified = functionsString.replace (/YourTokenHere/g, '${accessToken}');
+  await apiclientget.GenerateModule (functionsString, 'TdmClient');
+
 }
-GenerateModuleTEST ();
+GenerateModule ();
