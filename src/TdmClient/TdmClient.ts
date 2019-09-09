@@ -55,13 +55,9 @@ export class TdmClient {
    * Allows authorized user to add new TDM Table definition.
    * @param body undefined Minimal TDM Table Definition
    */
-  public async PostTdmtables (authorization: string) {
+  public async PostTdmtables (authorization: string, body: undefined) {
 
     const logMessagePrefix = 'TdmClient.PostTdmtables() ';
-
-    const body = {
-
-    };
 
     const options = {
       body,
@@ -285,13 +281,9 @@ export class TdmClient {
    * @param tdmTableId string TDM Table ID using these columns
    * @param body undefined Column Definition
    */
-  public async PostColumnsTableidByTdmTableId (tdmTableId: string, authorization: string) {
+  public async PostColumnsTableidByTdmTableId (tdmTableId: string, authorization: string, body: undefined) {
 
     const logMessagePrefix = 'TdmClient.PostColumnsTableidByTdmTableId() ';
-
-    const body = {
-
-    };
 
     const options = {
       body,
@@ -367,13 +359,9 @@ export class TdmClient {
    * @param tdmTableName string TDM Table Name using these columns
    * @param body undefined Column Definition
    */
-  public async PostColumnsTablenameByTdmTableName (tdmTableName: string, authorization: string) {
+  public async PostColumnsTablenameByTdmTableName (tdmTableName: string, authorization: string, body: undefined) {
 
     const logMessagePrefix = 'TdmClient.PostColumnsTablenameByTdmTableName() ';
-
-    const body = {
-
-    };
 
     const options = {
       body,
@@ -523,13 +511,9 @@ export class TdmClient {
    * @param tdmTableId string TDM Table ID to add row
    * @param body undefined Row Information
    */
-  public async PostRowsTableidByTdmTableId (tdmTableId: string, authorization: string) {
+  public async PostRowsTableidByTdmTableId (tdmTableId: string, authorization: string, body: undefined) {
 
     const logMessagePrefix = 'TdmClient.PostRowsTableidByTdmTableId() ';
-
-    const body = {
-
-    };
 
     const options = {
       body,
@@ -649,13 +633,9 @@ export class TdmClient {
    * @param tdmTableName string TDM Table name to add row
    * @param body undefined Row Information
    */
-  public async PostRowsTablenameByTdmTableName (tdmTableName: string, authorization: string) {
+  public async PostRowsTablenameByTdmTableName (tdmTableName: string, authorization: string, body: undefined) {
 
     const logMessagePrefix = 'TdmClient.PostRowsTablenameByTdmTableName() ';
-
-    const body = {
-
-    };
 
     const options = {
       body,
@@ -917,6 +897,8 @@ export class TdmClient {
       });
 
   }
+
+
 
 
 }

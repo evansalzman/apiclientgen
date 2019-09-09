@@ -2,6 +2,7 @@ import { listenerCount } from 'cluster';
 import fs from 'fs';
 import mustache from 'mustache';
 import * as requestPromise from 'request-promise';
+import { exitOnError } from 'winston';
 
 // disable mustache HTML escaping
 mustache.escape =  (text) => text;
@@ -9,12 +10,13 @@ mustache.escape =  (text) => text;
 const moduleTemplate = fs.readFileSync ('./data/templates/moduleTemplateApiClient.mustache', 'utf8');
 const functionTemplateGET = fs.readFileSync ('./data/templates/functionTemplateGET.mustache', 'utf8');
 const functionTemplatePOST = fs.readFileSync ('./data/templates/functionTemplatePOST.mustache', 'utf8');
+const interfaceTemplate = fs.readFileSync ('./data/templates/interfaceTemplate.mustache', 'utf8');
 
 /**
  * Load the swagger json document describing the API
  * @param url the URL of the swagger json doc
  */
-async function LoadSwaggerJson ( url: string ) {
+export async function LoadSwaggerJson ( url: string ) {
   const logMessagePrefix = 'LoadSwaggerJson() ';
 
   return await requestPromise.get (url)
@@ -32,7 +34,7 @@ async function LoadSwaggerJson ( url: string ) {
   });
 }
 
-async function GenerateClientCalls (swaggerJson: any, clientLibraryName: string) {
+export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: string) {
 
   const logMessagePrefix = 'apiclientget.GenereateClientCalls() ';
 
@@ -43,7 +45,8 @@ async function GenerateClientCalls (swaggerJson: any, clientLibraryName: string)
   }
 
   let functions = '';
-  for (const path in swaggerJson.paths) {
+
+  Object.keys (swaggerJson.paths).forEach ( (path) => {
     if (swaggerJson.paths.hasOwnProperty (path)) {
       for (const method in swaggerJson.paths[path]) {
         if (swaggerJson.paths[path].hasOwnProperty (method)) {
@@ -52,7 +55,7 @@ async function GenerateClientCalls (swaggerJson: any, clientLibraryName: string)
               functions += CreateGetFunction (path, swaggerJson.paths[path][method], clientLibraryName);
               break;
             case 'post':
-              functions += CreatePostFunction (path, swaggerJson.paths[path][method], clientLibraryName);
+              functions += CreatePostFunction (path, swaggerJson.paths[path][method], clientLibraryName, swaggerJson);
               break;
             case 'put':
               //
@@ -67,15 +70,14 @@ async function GenerateClientCalls (swaggerJson: any, clientLibraryName: string)
           }
         }
       }
-      //switch(swaggerJson.paths[path])
     }
-  }
+  });
 
   return functions;
 
 }
 
-function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
+function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibraryName: string, swaggerJson: any): string {
 
   const logMessagePrefix = 'CreatePostFunction() ';
 
@@ -216,14 +218,13 @@ function GenFunctionParameterSignature (apiRequestDefinition: any): string {
   for (const param of apiRequestDefinition.parameters) {
       // convert numeric swagger supplied types to be represented as JS type 'number'
     const paramType = (param.type === 'integer' || param.type === 'float') ? 'number' : param.type;
-    if ((param.in === 'query' || param.in === 'header') && param.required === false) {
+    if ((param.in !== 'path') && param.required === false) {
       const paramName = `${param.name.charAt (0).toLowerCase ()}${param.name.slice (1)}?`; // make sure the fist letter is lowercase
       parametersOptionalItems += `${parametersOptionalItemsSeparator}${paramName}: ${paramType}`;
       parametersOptionalItemsSeparator = ', ';
-    } else if ((param.in === 'query' || param.in === 'header') && param.required === true) {
+    } else if ((param.in !== 'path') && param.required === true) {
       const paramName = `${param.name.charAt (0).toLowerCase ()}${param.name.slice (1)}`; // make sure the fist letter is lowercase
       parameterQueryItems += `${parameterQueryItemsSeparator}${paramName}: ${paramType}`;
-      console.log (`DEBUG -- adding parameterQueryItems ${require ('util').inspect (parameterQueryItems, {colors: true, depth: 2})}`);
       parameterQueryItemsSeparator = ', ';
     } else if (param.in === 'path') {
       const paramName = param.name;
@@ -245,7 +246,27 @@ function GenFunctionParameterSignature (apiRequestDefinition: any): string {
   return parameterPathItems + parameterQueryItems + parametersOptionalItems;
 }
 
-function GenerateModule (functionsString: string, apiClientName: string): string {
+export function GenerateInterfaces (swaggerJson: any ): any {
+
+  const logMessagePrefix = 'apiClientGet.GenerateInterfaces() ';
+  const requestBody = {};
+  Object.keys (swaggerJson.definitions).forEach ((definition: any) => {
+    const currDef = swaggerJson.definitions[definition];
+    if (currDef.hasOwnProperty ('required') && currDef.hasOwnProperty ('properties')) {
+      Object.keys (currDef.properties).forEach ( (propertyName) => {
+        console.log (`DEBUG -- propertyName ${propertyName}`);
+        console.log (`DEBUG -- type ${require ('util').inspect (currDef[propertyName].type, {colors: true, depth: 2})}`);
+        console.log (`DEBUG -- description ${require ('util').inspect (currDef[propertyName].description, {colors: true, depth: 2})}`);
+      });
+      console.log (`DEBUG -- definition: ${definition}, required.length: ${currDef.required.length}, properties.length: ${currDef.properties.length}`);
+    } else {
+      console.log (`${logMessagePrefix} failed to find 'properties' and 'required' lists for ${definition}`);
+      process.exit (1);
+    }
+  });
+}
+
+export function GenerateModule (functionsString: string, apiClientName: string): string {
 
   const templateInputs = {
     apiClientName,
@@ -263,7 +284,3 @@ function GenerateModule (functionsString: string, apiClientName: string): string
 
   return moduleString;
 }
-
-exports.LoadSwaggerJson = LoadSwaggerJson;
-exports.GenerateClientCalls = GenerateClientCalls;
-exports.GenerateModule = GenerateModule;
