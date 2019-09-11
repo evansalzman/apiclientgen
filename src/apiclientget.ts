@@ -13,6 +13,20 @@ const functionTemplatePOST = fs.readFileSync ('./data/templates/functionTemplate
 const interfaceTemplate = fs.readFileSync ('./data/templates/interfaceTemplate.mustache', 'utf8');
 
 /**
+ * Based on a swagger doc, create an API client module for NodeJS
+ * @param swaggerJsonUrl {string} The URL for the swagger json document
+ * @param apiClientName {string} The name you want to give the api client module
+ */
+export async function GenerateApiClientModule (swaggerJsonUrl: string, apiClientName: string) {
+
+  const swaggerJson = await LoadSwaggerJson (swaggerJsonUrl);
+  const functionsString = await GenerateClientCalls (swaggerJson, apiClientName); // TODO: make the client lib name a passed in param
+  const interfaceString = await GenerateInterfaces (swaggerJson);
+  await GenerateModule (functionsString, interfaceString, apiClientName);
+
+}
+
+/**
  * Load the swagger json document describing the API
  * @param url the URL of the swagger json doc
  */
@@ -34,15 +48,9 @@ export async function LoadSwaggerJson ( url: string ) {
   });
 }
 
-export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: string) {
+export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: string): Promise<string> {
 
   const logMessagePrefix = 'apiclientget.GenereateClientCalls() ';
-
-  if (!swaggerJson) {
-    console.log ('DEBUG -- Attempted iteration of swaggerJson, but swaggerJson is not loaded');
-
-    return new Error (`{logMessagePrefix} Swagger json load failure. Or did you not try to load it yet, hmmm?`);
-  }
 
   let functions = '';
 
@@ -55,7 +63,7 @@ export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: 
               functions += CreateGetFunction (path, swaggerJson.paths[path][method], clientLibraryName);
               break;
             case 'post':
-              functions += CreatePostFunction (path, swaggerJson.paths[path][method], clientLibraryName, swaggerJson);
+              functions += CreatePostFunction (path, swaggerJson.paths[path][method], clientLibraryName);
               break;
             case 'put':
               //
@@ -77,7 +85,7 @@ export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: 
 
 }
 
-function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibraryName: string, swaggerJson: any): string {
+function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
 
   const logMessagePrefix = 'CreatePostFunction() ';
 
@@ -97,9 +105,9 @@ function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibr
   // join the array elements into a single camelcase word, TODO: Create an optional map (API path => ReadableName) to allow better function names
   const functionName = 'Post' + pathArray.join ('');
 
-  const parameterSignature = GenFunctionParameterSignature (apiRequestDefinition);
+  const parameterSignature = GenerateFunctionParameterSignature (apiRequestDefinition);
 
-  const functionDocumentation = GenFunctionDocumentation (apiRequestDefinition);
+  const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
 
   let headerAccept = '';
   for (const produces of apiRequestDefinition.produces) {
@@ -107,7 +115,8 @@ function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibr
       headerAccept = `'Accept': 'application/json'`;
     }
   }
-  const headersCustom = GenCustomHeaderEntries (apiRequestDefinition);
+  const headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
+  // add `Accept: {accept value}` to the top of the headers
   headersCustom.concat (headerAccept);
 
     // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${var})
@@ -147,9 +156,9 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
   // join the array elements into a single camelcase word
   const functionName = 'Get' + pathArray.join ('');
 
-  const parameterSignature = GenFunctionParameterSignature (apiRequestDefinition);
+  const parameterSignature = GenerateFunctionParameterSignature (apiRequestDefinition);
 
-  const functionDocumentation = GenFunctionDocumentation (apiRequestDefinition);
+  const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
 
   let headerAccept = '';
   for (const produces of apiRequestDefinition.produces) {
@@ -157,7 +166,7 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
       headerAccept = `'Accept': 'application/json'`;
     }
   }
-  const headersCustom = GenCustomHeaderEntries (apiRequestDefinition);
+  const headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
   headersCustom.push (headerAccept);
 
   // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${var})
@@ -177,7 +186,7 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
   return functionString;
 }
 
-function GenFunctionDocumentation (getDef: any): string[] {
+function GenerateFunctionDocumentation (getDef: any): string[] {
   const functionDocumentation: string[] = [];
   functionDocumentation.push (`* ${getDef.summary}`);
 
@@ -194,7 +203,7 @@ function GenFunctionDocumentation (getDef: any): string[] {
   return functionDocumentation;
 }
 
-function GenCustomHeaderEntries (requestDefinition: any) {
+function GenerateCustomHeaderEntries (requestDefinition: any) {
   const customHeaders = [];
 
   for (const parameter of requestDefinition.parameters) {
@@ -206,7 +215,7 @@ function GenCustomHeaderEntries (requestDefinition: any) {
   return customHeaders;
 }
 
-function GenFunctionParameterSignature (apiRequestDefinition: any): string {
+function GenerateFunctionParameterSignature (apiRequestDefinition: any): string {
 
   let parameterPathItems = '';
   let parameterPathItemsSeparator = '';
@@ -216,8 +225,18 @@ function GenFunctionParameterSignature (apiRequestDefinition: any): string {
   let parametersOptionalItemsSeparator = '';
 
   for (const param of apiRequestDefinition.parameters) {
+
+    // set the type to be used for each parameter in the signature
+    let paramType: string;
+    if (param.in === 'body' ) {
+      // get the name we use to create the interface for the type, last part of the URI
+      const pa = param.schema.$ref.split ('/');
+      paramType = `I${pa[pa.length - 1]}`;
+    } else {
       // convert numeric swagger supplied types to be represented as JS type 'number'
-    const paramType = (param.type === 'integer' || param.type === 'float') ? 'number' : param.type;
+      paramType = (param.type === 'integer' || param.type === 'float') ? 'number' : param.type;
+    }
+
     if ((param.in !== 'path') && param.required === false) {
       const paramName = `${param.name.charAt (0).toLowerCase ()}${param.name.slice (1)}?`; // make sure the fist letter is lowercase
       parametersOptionalItems += `${parametersOptionalItemsSeparator}${paramName}: ${paramType}`;
@@ -246,31 +265,77 @@ function GenFunctionParameterSignature (apiRequestDefinition: any): string {
   return parameterPathItems + parameterQueryItems + parametersOptionalItems;
 }
 
-export function GenerateInterfaces (swaggerJson: any ): any {
+export function GenerateInterfaces (swaggerJson: any ): string {
 
   const logMessagePrefix = 'apiClientGet.GenerateInterfaces() ';
-  const requestBody = {};
-  Object.keys (swaggerJson.definitions).forEach ((definition: any) => {
-    const currDef = swaggerJson.definitions[definition];
+
+  let interfacesString: string = '';
+
+  Object.entries (swaggerJson.definitions).forEach ((entry) => {
+    const interfaceName: string = `I${entry[0]}`;
+    const interfaceProps: any[] = [];
+    const interfaceDocumentation: string[] = [];
+    const currDef: any = entry[1];
     if (currDef.hasOwnProperty ('required') && currDef.hasOwnProperty ('properties')) {
+
       Object.keys (currDef.properties).forEach ( (propertyName) => {
-        console.log (`DEBUG -- propertyName ${propertyName}`);
-        console.log (`DEBUG -- type ${require ('util').inspect (currDef[propertyName].type, {colors: true, depth: 2})}`);
-        console.log (`DEBUG -- description ${require ('util').inspect (currDef[propertyName].description, {colors: true, depth: 2})}`);
+        // ensure that the name starts with a lowercase
+        let propName = propertyName[0].toLowerCase () + propertyName.slice (1);
+        let propNameForDoc = propName;
+        // convert types to JS compatible type
+        let propType: string;
+        const propDescription: string = currDef.properties[propertyName].description;
+        switch (currDef.properties[propertyName].type.toLowerCase ()) {
+          case ('string'):
+            propType = 'string';
+            break;
+          case('boolean'):
+            propType = 'boolean';
+            break;
+          case('float'):
+          case('integer'):
+            propType = 'number';
+            break;
+          case('array'):
+            propType = 'any[]';
+        }
+        // is the propname optional? (check w/the original prop name, not the fixed 'uncapitalized' one)
+        if ( ! currDef.required.includes (propertyName) ) {
+          propNameForDoc = `[${propName}]`;
+          propName = `${propName}?`;
+        }
+        interfaceProps.push (`${propName}: ${propType}`);
+        interfaceDocumentation.push (`@property {${propType}} ${propNameForDoc} - ${propDescription}`);
       });
-      console.log (`DEBUG -- definition: ${definition}, required.length: ${currDef.required.length}, properties.length: ${currDef.properties.length}`);
+      const genResult = GenerateInterfaceString (interfaceName, interfaceProps, interfaceDocumentation);
+      interfacesString += genResult;
     } else {
-      console.log (`${logMessagePrefix} failed to find 'properties' and 'required' lists for ${definition}`);
+      console.log (`${logMessagePrefix} failed to find 'properties' and 'required' lists for ${interfaceName}`);
       process.exit (1);
     }
   });
+
+  return interfacesString;
 }
 
-export function GenerateModule (functionsString: string, apiClientName: string): string {
+function GenerateInterfaceString (interfaceName: string, interfaceProperties: any[], interfaceDocumentation?: any): string {
+  let interfaceString: string;
+  const templateInputs = {
+    interfaceDocumentation: interfaceDocumentation ? interfaceDocumentation : 'no documentation provided',
+    interfaceName,
+    interfaceProperties
+  };
+  interfaceString = mustache.render (interfaceTemplate, templateInputs);
+
+  return interfaceString;
+}
+
+export function GenerateModule (functionsString: string, interfaceString: string, apiClientName: string): string {
 
   const templateInputs = {
     apiClientName,
-    functions: functionsString
+    functions: functionsString,
+    interfaces: interfaceString
   };
 
   const moduleString = mustache.render (moduleTemplate, templateInputs);

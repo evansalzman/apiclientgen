@@ -1,7 +1,7 @@
 import requestPromise from 'request-promise';
 import * as log from 'winston';
 
-export class TdmClient {
+export class TdmTablesClient {
 
   public apiServerUrl: string;
 
@@ -20,7 +20,7 @@ export class TdmClient {
    */
   public async GetTdmtables (authorization: string, searchText?: string, sortOrder?: string, startRow?: number, pageSize?: number) {
 
-    const logMessagePrefix = 'TdmClient.GetTdmtables() ';
+    const logMessagePrefix = 'TdmTablesClient.GetTdmtables() ';
 
     const accessToken: string = '';
 
@@ -55,9 +55,9 @@ export class TdmClient {
    * Allows authorized user to add new TDM Table definition.
    * @param body undefined Minimal TDM Table Definition
    */
-  public async PostTdmtables (authorization: string, body: undefined) {
+  public async PostTdmtables (authorization: string, body: IAddTdmTableDefnRequest) {
 
-    const logMessagePrefix = 'TdmClient.PostTdmtables() ';
+    const logMessagePrefix = 'TdmTablesClient.PostTdmtables() ';
 
     const options = {
       body,
@@ -92,7 +92,7 @@ export class TdmClient {
    */
   public async GetTdmtablesByTdmTableId (tdmTableId: string, authorization: string) {
 
-    const logMessagePrefix = 'TdmClient.GetTdmtablesByTdmTableId() ';
+    const logMessagePrefix = 'TdmTablesClient.GetTdmtablesByTdmTableId() ';
 
     const accessToken: string = '';
 
@@ -129,7 +129,7 @@ export class TdmClient {
    */
   public async GetTdmtablesTablenameByTdmTableName (tdmTableName: string, authorization: string) {
 
-    const logMessagePrefix = 'TdmClient.GetTdmtablesTablenameByTdmTableName() ';
+    const logMessagePrefix = 'TdmTablesClient.GetTdmtablesTablenameByTdmTableName() ';
 
     const accessToken: string = '';
 
@@ -166,7 +166,7 @@ export class TdmClient {
    */
   public async GetTdmtablesIdByTdmTableName (tdmTableName: string, authorization: string) {
 
-    const logMessagePrefix = 'TdmClient.GetTdmtablesIdByTdmTableName() ';
+    const logMessagePrefix = 'TdmTablesClient.GetTdmtablesIdByTdmTableName() ';
 
     const accessToken: string = '';
 
@@ -203,7 +203,7 @@ export class TdmClient {
    */
   public async GetTdmtablesNameByTdmTableId (tdmTableId: string, authorization: string) {
 
-    const logMessagePrefix = 'TdmClient.GetTdmtablesNameByTdmTableId() ';
+    const logMessagePrefix = 'TdmTablesClient.GetTdmtablesNameByTdmTableId() ';
 
     const accessToken: string = '';
 
@@ -245,7 +245,7 @@ export class TdmClient {
    */
   public async GetColumnsTableidByTdmTableId (tdmTableId: string, authorization: string, searchText?: string, sortOrder?: string, startRow?: number, pageSize?: number) {
 
-    const logMessagePrefix = 'TdmClient.GetColumnsTableidByTdmTableId() ';
+    const logMessagePrefix = 'TdmTablesClient.GetColumnsTableidByTdmTableId() ';
 
     const accessToken: string = '';
 
@@ -281,9 +281,9 @@ export class TdmClient {
    * @param tdmTableId string TDM Table ID using these columns
    * @param body undefined Column Definition
    */
-  public async PostColumnsTableidByTdmTableId (tdmTableId: string, authorization: string, body: undefined) {
+  public async PostColumnsTableidByTdmTableId (tdmTableId: string, authorization: string, body: IAddUpdateColumnRequest) {
 
-    const logMessagePrefix = 'TdmClient.PostColumnsTableidByTdmTableId() ';
+    const logMessagePrefix = 'TdmTablesClient.PostColumnsTableidByTdmTableId() ';
 
     const options = {
       body,
@@ -323,7 +323,7 @@ export class TdmClient {
    */
   public async GetColumnsTablenameByTdmTableName (tdmTableName: string, authorization: string, searchText?: string, sortOrder?: string, startRow?: number, pageSize?: number) {
 
-    const logMessagePrefix = 'TdmClient.GetColumnsTablenameByTdmTableName() ';
+    const logMessagePrefix = 'TdmTablesClient.GetColumnsTablenameByTdmTableName() ';
 
     const accessToken: string = '';
 
@@ -359,9 +359,9 @@ export class TdmClient {
    * @param tdmTableName string TDM Table Name using these columns
    * @param body undefined Column Definition
    */
-  public async PostColumnsTablenameByTdmTableName (tdmTableName: string, authorization: string, body: undefined) {
+  public async PostColumnsTablenameByTdmTableName (tdmTableName: string, authorization: string, body: IAddUpdateColumnRequest) {
 
-    const logMessagePrefix = 'TdmClient.PostColumnsTablenameByTdmTableName() ';
+    const logMessagePrefix = 'TdmTablesClient.PostColumnsTablenameByTdmTableName() ';
 
     const options = {
       body,
@@ -396,7 +396,7 @@ export class TdmClient {
    */
   public async GetColumnsByColumnId (columnId: string, authorization: string) {
 
-    const logMessagePrefix = 'TdmClient.GetColumnsByColumnId() ';
+    const logMessagePrefix = 'TdmTablesClient.GetColumnsByColumnId() ';
 
     const accessToken: string = '';
 
@@ -432,7 +432,7 @@ export class TdmClient {
    */
   public async GetColumntypes (authorization: string) {
 
-    const logMessagePrefix = 'TdmClient.GetColumntypes() ';
+    const logMessagePrefix = 'TdmTablesClient.GetColumntypes() ';
 
     const accessToken: string = '';
 
@@ -475,7 +475,7 @@ export class TdmClient {
    */
   public async GetRowsTableidByTdmTableId (tdmTableId: string, authorization: string, searchText?: string, sortOrder?: string, startRow?: number, pageSize?: number, includeInActiveColumns?: boolean) {
 
-    const logMessagePrefix = 'TdmClient.GetRowsTableidByTdmTableId() ';
+    const logMessagePrefix = 'TdmTablesClient.GetRowsTableidByTdmTableId() ';
 
     const accessToken: string = '';
 
@@ -511,9 +511,9 @@ export class TdmClient {
    * @param tdmTableId string TDM Table ID to add row
    * @param body undefined Row Information
    */
-  public async PostRowsTableidByTdmTableId (tdmTableId: string, authorization: string, body: undefined) {
+  public async PostRowsTableidByTdmTableId (tdmTableId: string, authorization: string, body: ITdmRow) {
 
-    const logMessagePrefix = 'TdmClient.PostRowsTableidByTdmTableId() ';
+    const logMessagePrefix = 'TdmTablesClient.PostRowsTableidByTdmTableId() ';
 
     const options = {
       body,
@@ -554,7 +554,7 @@ export class TdmClient {
    */
   public async GetRowsTableidSearchByTdmTableIdBySearchParam (tdmTableId: string, searchParam: string, authorization: string, sortOrder?: string, startRow?: number, pageSize?: number, includeInActiveColumns?: boolean) {
 
-    const logMessagePrefix = 'TdmClient.GetRowsTableidSearchByTdmTableIdBySearchParam() ';
+    const logMessagePrefix = 'TdmTablesClient.GetRowsTableidSearchByTdmTableIdBySearchParam() ';
 
     const accessToken: string = '';
 
@@ -597,7 +597,7 @@ export class TdmClient {
    */
   public async GetRowsTablenameByTdmTableName (tdmTableName: string, authorization: string, searchText?: string, sortOrder?: string, startRow?: number, pageSize?: number, includeInActiveColumns?: boolean) {
 
-    const logMessagePrefix = 'TdmClient.GetRowsTablenameByTdmTableName() ';
+    const logMessagePrefix = 'TdmTablesClient.GetRowsTablenameByTdmTableName() ';
 
     const accessToken: string = '';
 
@@ -633,9 +633,9 @@ export class TdmClient {
    * @param tdmTableName string TDM Table name to add row
    * @param body undefined Row Information
    */
-  public async PostRowsTablenameByTdmTableName (tdmTableName: string, authorization: string, body: undefined) {
+  public async PostRowsTablenameByTdmTableName (tdmTableName: string, authorization: string, body: ITdmRow) {
 
-    const logMessagePrefix = 'TdmClient.PostRowsTablenameByTdmTableName() ';
+    const logMessagePrefix = 'TdmTablesClient.PostRowsTablenameByTdmTableName() ';
 
     const options = {
       body,
@@ -676,7 +676,7 @@ export class TdmClient {
    */
   public async GetRowsTablenameSearchByTdmTableNameBySearchParam (tdmTableName: string, searchParam: string, authorization: string, sortOrder?: string, startRow?: number, pageSize?: number, includeInActiveColumns?: boolean) {
 
-    const logMessagePrefix = 'TdmClient.GetRowsTablenameSearchByTdmTableNameBySearchParam() ';
+    const logMessagePrefix = 'TdmTablesClient.GetRowsTablenameSearchByTdmTableNameBySearchParam() ';
 
     const accessToken: string = '';
 
@@ -715,7 +715,7 @@ export class TdmClient {
    */
   public async GetRowsTableidByTdmTableIdByRowId (tdmTableId: string, rowId: string, authorization: string, includeInActiveColumns?: boolean) {
 
-    const logMessagePrefix = 'TdmClient.GetRowsTableidByTdmTableIdByRowId() ';
+    const logMessagePrefix = 'TdmTablesClient.GetRowsTableidByTdmTableIdByRowId() ';
 
     const accessToken: string = '';
 
@@ -753,7 +753,7 @@ export class TdmClient {
    */
   public async GetRowsCountTablenameSearchByTdmTableNameBySearchParam (tdmTableName: string, searchParam: string, authorization: string) {
 
-    const logMessagePrefix = 'TdmClient.GetRowsCountTablenameSearchByTdmTableNameBySearchParam() ';
+    const logMessagePrefix = 'TdmTablesClient.GetRowsCountTablenameSearchByTdmTableNameBySearchParam() ';
 
     const accessToken: string = '';
 
@@ -791,7 +791,7 @@ export class TdmClient {
    */
   public async GetRowsCountTableidSearchByTdmTableIdBySearchParam (tdmTableId: string, searchParam: string, authorization: string) {
 
-    const logMessagePrefix = 'TdmClient.GetRowsCountTableidSearchByTdmTableIdBySearchParam() ';
+    const logMessagePrefix = 'TdmTablesClient.GetRowsCountTableidSearchByTdmTableIdBySearchParam() ';
 
     const accessToken: string = '';
 
@@ -829,7 +829,7 @@ export class TdmClient {
    */
   public async GetRowsArchiveCountTablenameSearchByTdmTableNameBySearchParam (tdmTableName: string, searchParam: string, authorization: string) {
 
-    const logMessagePrefix = 'TdmClient.GetRowsArchiveCountTablenameSearchByTdmTableNameBySearchParam() ';
+    const logMessagePrefix = 'TdmTablesClient.GetRowsArchiveCountTablenameSearchByTdmTableNameBySearchParam() ';
 
     const accessToken: string = '';
 
@@ -867,7 +867,7 @@ export class TdmClient {
    */
   public async GetRowsArchiveCountTableidSearchByTdmTableIdBySearchParam (tdmTableId: string, searchParam: string, authorization: string) {
 
-    const logMessagePrefix = 'TdmClient.GetRowsArchiveCountTableidSearchByTdmTableIdBySearchParam() ';
+    const logMessagePrefix = 'TdmTablesClient.GetRowsArchiveCountTableidSearchByTdmTableIdBySearchParam() ';
 
     const accessToken: string = '';
 
@@ -898,7 +898,253 @@ export class TdmClient {
 
   }
 
+}
 
-
-
+/**
+ * ITDMTableDefnResponse
+ * @property {number} tdmTableId - Unique table id
+ * @property {string} tdmTableOwner - User name of the TDM Table owner
+ * @property {string} tdmTableName - Unique table name
+ * @property {string} tdmTableDescription - Description of the TDM Table's purpose
+ * @property {number} colCount - Number of columns in table
+ * @property {number} rowCount - Number of rows in table
+ * @property {number} maxColCount - Max allowed number of columns in table
+ * @property {number} maxRowCount - Max allowed number of rows in table
+ * @property {string} createdDT - Table created date
+ * @property {string} updatedDT - Table last updated date
+ * @property {string} accessLevel - Current users access level to the TDM Table
+ * @property {boolean} publicAccess - If anonymous access is granted to the TDM Table
+ * @property {boolean} archiveEnabled - If an archive table is needed
+ * @property {boolean} active - If the table is active
+ */
+export interface ITDMTableDefnResponse {
+  tdmTableId: number;
+  tdmTableOwner: string;
+  tdmTableName: string;
+  tdmTableDescription: string;
+  colCount: number;
+  rowCount: number;
+  maxColCount: number;
+  maxRowCount: number;
+  createdDT: string;
+  updatedDT: string;
+  accessLevel: string;
+  publicAccess: boolean;
+  archiveEnabled: boolean;
+  active: boolean;
+}
+/**
+ * ITdmAuthToken
+ * @property {string} accessToken - OAuth2 access token
+ * @property {string} refreshToken - Refresh token
+ * @property {string} tokenType - Type of token
+ * @property {number} expireSeconds - number of seconds token was valid when created
+ */
+export interface ITdmAuthToken {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  expireSeconds: number;
+}
+/**
+ * IAddTdmTableDefnRequest
+ * @property {string} tdmTableName - Unique table name
+ * @property {string} tdmTableDescription - Description of the TDM Table's purpose
+ * @property {string} dbEngine - Database used for table storage (Mongo or MySQL)
+ * @property {boolean} publicAccess - If anonymous access is granted to the TDM Table
+ * @property {boolean} archiveEnabled - If an archive table is needed
+ * @property {boolean} active - If the table is ready for use
+ */
+export interface IAddTdmTableDefnRequest {
+  tdmTableName: string;
+  tdmTableDescription: string;
+  dbEngine: string;
+  publicAccess: boolean;
+  archiveEnabled: boolean;
+  active: boolean;
+}
+/**
+ * IAddTdmTableDefnResponse
+ * @property {number} tdmTableId - Unique table id
+ */
+export interface IAddTdmTableDefnResponse {
+  tdmTableId: number;
+}
+/**
+ * IUpdateTdmTableDefnResponse
+ * @property {number} updatedTableCount - Updated table count
+ */
+export interface IUpdateTdmTableDefnResponse {
+  updatedTableCount: number;
+}
+/**
+ * IDeleteTdmTableDefnResponse
+ * @property {number} deletedTableCount - Deleted table count
+ */
+export interface IDeleteTdmTableDefnResponse {
+  deletedTableCount: number;
+}
+/**
+ * ITdmTableIdResponse
+ * @property {number} tdmTableId - Unique table id
+ */
+export interface ITdmTableIdResponse {
+  tdmTableId: number;
+}
+/**
+ * ITdmTableNameResponse
+ * @property {string} tdmTableName - TDM Table Name
+ */
+export interface ITdmTableNameResponse {
+  tdmTableName: string;
+}
+/**
+ * IAddUpdateColumnRequest
+ * @property {string} columnName - Column name - unique to table
+ * @property {string} columnType - Column database type
+ * @property {boolean} unique - If the column is unique
+ * @property {boolean} indexed - If the column is indexed
+ * @property {boolean} required - If the column is required
+ * @property {number} order - Column display order
+ * @property {boolean} active - If the column is ready for use
+ */
+export interface IAddUpdateColumnRequest {
+  columnName: string;
+  columnType: string;
+  unique: boolean;
+  indexed: boolean;
+  required: boolean;
+  order: number;
+  active: boolean;
+}
+/**
+ * IAddColumnResponse
+ * @property {number} columnId - Unique column id
+ */
+export interface IAddColumnResponse {
+  columnId: number;
+}
+/**
+ * ITdmRow
+ * @property {string} [iD] - System autoincrement column, only send for updates
+ * @property {string} column1 - User defined column name 1, spaces in column names must be replaces with underscore '_'
+ * @property {string} column2 - User defined column name 2, spaces in column names must be replaces with underscore '_'
+ */
+export interface ITdmRow {
+  iD?: string;
+  column1: string;
+  column2: string;
+}
+/**
+ * IAddRowResponse
+ * @property {number} rowId - Row id unique to this table
+ */
+export interface IAddRowResponse {
+  rowId: number;
+}
+/**
+ * IUpdateRowResponse
+ * @property {number} updatedRowCount - Updated row count
+ */
+export interface IUpdateRowResponse {
+  updatedRowCount: number;
+}
+/**
+ * IDeletedRowResponse
+ * @property {number} deletedRowCount - Deleted row count
+ */
+export interface IDeletedRowResponse {
+  deletedRowCount: number;
+}
+/**
+ * ITruncateTableResponse
+ * @property {number} remainingRowCount - Deleted table count
+ */
+export interface ITruncateTableResponse {
+  remainingRowCount: number;
+}
+/**
+ * IUpdateColumnDefnResponse
+ * @property {number} updatedColumnCount - Updated column count
+ */
+export interface IUpdateColumnDefnResponse {
+  updatedColumnCount: number;
+}
+/**
+ * IDeleteColumnDefnResponse
+ * @property {number} deletedColumnCount - Deleted column count
+ */
+export interface IDeleteColumnDefnResponse {
+  deletedColumnCount: number;
+}
+/**
+ * IColumnDefnResponse
+ * @property {number} columnId - Unique Column ID
+ * @property {string} columnType - Column data type
+ * @property {string} columnName - Unique column name in this table
+ * @property {boolean} unique - If the column should be unique in the table
+ * @property {boolean} indexed - If the column should be indexed
+ * @property {boolean} required - If the column should be required
+ * @property {number} order - The column order
+ * @property {boolean} active - If the table is ready for use
+ */
+export interface IColumnDefnResponse {
+  columnId: number;
+  columnType: string;
+  columnName: string;
+  unique: boolean;
+  indexed: boolean;
+  required: boolean;
+  order: number;
+  active: boolean;
+}
+/**
+ * IColumnTypesResponse
+ * @property {number} columnTypeId - Unique column type id
+ * @property {string} columnTypeName - Unique column type name
+ */
+export interface IColumnTypesResponse {
+  columnTypeId: number;
+  columnTypeName: string;
+}
+/**
+ * IRestoreRowResponse
+ * @property {number} restoredCount - Restored record count
+ */
+export interface IRestoreRowResponse {
+  restoredCount: number;
+}
+/**
+ * IDeleteArchivedRowResponse
+ * @property {number} deletedCount - Deleted count
+ */
+export interface IDeleteArchivedRowResponse {
+  deletedCount: number;
+}
+/**
+ * IValidationError
+ * @property {number} code - undefined
+ * @property {string} message - undefined
+ * @property {any[]} [fields] - undefined
+ */
+export interface IValidationError {
+  code: number;
+  message: string;
+  fields?: any[];
+}
+/**
+ * ITdmAppError
+ * @property {number} code - undefined
+ * @property {string} message - undefined
+ */
+export interface ITdmAppError {
+  code: number;
+  message: string;
+}
+/**
+ * IRowCountResponse
+ * @property {number} rowCount - Row count
+ */
+export interface IRowCountResponse {
+  rowCount: number;
 }

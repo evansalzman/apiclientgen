@@ -1,6 +1,11 @@
-{{description}}
-interface {{interfaceName}} {
+/**
+ * {{interfaceName}}
+ {{#interfaceDocumentation}}
+ * {{.}}
+ {{/interfaceDocumentation}}
+ */
+export interface {{interfaceName}} {
   {{#interfaceProperties}}
-  {{.}},
+  {{.}};
   {{/interfaceProperties}}
 }

@@ -13,13 +13,20 @@ const apiclientget = require ('./dist/apiclientget');
 // }
 // GenerateClientCallsTEST ();
 
-async function GenerateModule () {
+// async function GenerateModule () {
 
-  const swaggerJson = await apiclientget.LoadSwaggerJson ('https://stage.tdmtables.wdprapps.disney.com/docs/TDMTables-V1-user.json');
-  const functionsString = await apiclientget.GenerateClientCalls (swaggerJson, 'TdmClient'); // TODO: make the client lib name a passed in param
-  // const functionStringModified = functionsString.replace (/YourTokenHere/g, '${accessToken}');
-  await apiclientget.GenerateModule (functionsString, 'TdmClient');
-  await apiclientget.GenerateInterfaces (swaggerJson);
+//   const swaggerJson = await apiclientget.LoadSwaggerJson ('https://stage.tdmtables.wdprapps.disney.com/docs/TDMTables-V1-user.json');
+//   const functionsString = await apiclientget.GenerateClientCalls (swaggerJson, 'TdmClient'); // TODO: make the client lib name a passed in param
+//   const interfaceString = await apiclientget.GenerateInterfaces (swaggerJson);
+//   await apiclientget.GenerateModule (functionsString, interfaceString, 'TdmClient');
 
-}
-GenerateModule ();
+// }
+// GenerateModule ();
+
+const tdmAuthApiUrl = 'https://stage.tdmauth.wdprapps.disney.com/docs/TDMAuth-V1.json';
+const tdmAuthApiClientName = 'TdmAuthClient';
+apiclientget.GenerateApiClientModule (tdmAuthApiUrl, tdmAuthApiClientName);
+
+// const tdmTablesApiUrl = 'https://stage.tdmtables.wdprapps.disney.com/docs/TDMTables-V1-user.json';
+// const tdmTablesApiClientName = 'TdmTablesClient';
+// apiclientget.GenerateApiClientModule (tdmTablesApiUrl, tdmTablesApiClientName);
