@@ -86,6 +86,43 @@ export class TdmTablesClient {
 
   }
   /**
+   * Deletes an existing TDM table
+   * Allows authorized user to delete TDM Table definitions.
+   * @param tdmTableId string TDM Table ID to delete
+   */
+  public async DeleteTdmtablesByTdmTableId (tdmTableId: string, authorization: string) {
+
+    const logMessagePrefix = 'TdmTablesClient.DeleteTdmtablesByTdmTableId() ';
+
+    const accessToken: string = '';
+
+    const options = {
+      headers: {
+        'Authorization': `${authorization}`,
+        'Accept': 'application/json',
+        'User-Agent': 'automated-testing-request',
+        'X-Conversation-Id': 'automated-testing-request-id'
+      },
+      json: true,
+      method: 'DELETE',
+      url: `${this.apiServerUrl}/tdmtables/${tdmTableId}`
+    };
+
+    return await requestPromise (options)
+      .then ((response: any) => {
+        log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+        return response;
+      })
+      . catch ( (errorResponse: any) => {
+        log.info (`$[logMessagePrefix] There was an error calling the API.`);
+        log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+        return errorResponse;
+      });
+
+  }
+  /**
    * Updates an existing TDM table
    * Allows authorized user to update TDM Table definitions.
    * @param tdmTableId string TDM Table ID to update
@@ -426,6 +463,43 @@ export class TdmTablesClient {
 
   }
   /**
+   * Deletes an existing Column
+   * Allows authorized user to delete Column definitions.
+   * @param columnId string Column ID to delete
+   */
+  public async DeleteColumnsByColumnId (columnId: string, authorization: string) {
+
+    const logMessagePrefix = 'TdmTablesClient.DeleteColumnsByColumnId() ';
+
+    const accessToken: string = '';
+
+    const options = {
+      headers: {
+        'Authorization': `${authorization}`,
+        'Accept': 'application/json',
+        'User-Agent': 'automated-testing-request',
+        'X-Conversation-Id': 'automated-testing-request-id'
+      },
+      json: true,
+      method: 'DELETE',
+      url: `${this.apiServerUrl}/columns/${columnId}`
+    };
+
+    return await requestPromise (options)
+      .then ((response: any) => {
+        log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+        return response;
+      })
+      . catch ( (errorResponse: any) => {
+        log.info (`$[logMessagePrefix] There was an error calling the API.`);
+        log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+        return errorResponse;
+      });
+
+  }
+  /**
    * Updates an existing Column
    * Allows authorized user to update Column definitions.
    * @param columnId string Column ID to update
@@ -614,6 +688,43 @@ export class TdmTablesClient {
 
   }
   /**
+   * Deletes all table rows. (truncate)
+   * Allows authorized user to truncate a TDM Table.
+   * @param tdmTableId string TDM Table ID having these rows
+   */
+  public async DeleteRowsTableidByTdmTableId (tdmTableId: string, authorization: string) {
+
+    const logMessagePrefix = 'TdmTablesClient.DeleteRowsTableidByTdmTableId() ';
+
+    const accessToken: string = '';
+
+    const options = {
+      headers: {
+        'Authorization': `${authorization}`,
+        'Accept': 'application/json',
+        'User-Agent': 'automated-testing-request',
+        'X-Conversation-Id': 'automated-testing-request-id'
+      },
+      json: true,
+      method: 'DELETE',
+      url: `${this.apiServerUrl}/rows/tableid/${tdmTableId}`
+    };
+
+    return await requestPromise (options)
+      .then ((response: any) => {
+        log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+        return response;
+      })
+      . catch ( (errorResponse: any) => {
+        log.info (`$[logMessagePrefix] There was an error calling the API.`);
+        log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+        return errorResponse;
+      });
+
+  }
+  /**
    * List of Rows
    * The TDM rows endpoint returns the tables rows.
    * The list is limited by the request parameters.
@@ -639,6 +750,47 @@ export class TdmTablesClient {
       },
       json: true,
       method: 'GET',
+      url: `${this.apiServerUrl}/rows/tableid/search/${tdmTableId}/${searchParam}`
+    };
+
+    return await requestPromise (options)
+      .then ((response: any) => {
+        log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+        return response;
+      })
+      . catch ( (errorResponse: any) => {
+        log.info (`$[logMessagePrefix] There was an error calling the API.`);
+        log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+        return errorResponse;
+      });
+
+  }
+  /**
+   * Deletes table rows Matching Search Criteria
+   * Allows authorized user to delete rows from TDM Table based on search criteria.
+   * @param tdmTableId string TDM Table ID having these rows
+   * @param searchParam string TDM Table ID having these rows
+   * @param sortOrder string Results are ordered by this column number list
+   * @param startRow integer The first row to show, used for paging
+   * @param pageSize integer The number of rows to return, used for paging
+   */
+  public async DeleteRowsTableidSearchByTdmTableIdBySearchParam (tdmTableId: string, searchParam: string, authorization: string, sortOrder?: string, startRow?: number, pageSize?: number) {
+
+    const logMessagePrefix = 'TdmTablesClient.DeleteRowsTableidSearchByTdmTableIdBySearchParam() ';
+
+    const accessToken: string = '';
+
+    const options = {
+      headers: {
+        'Authorization': `${authorization}`,
+        'Accept': 'application/json',
+        'User-Agent': 'automated-testing-request',
+        'X-Conversation-Id': 'automated-testing-request-id'
+      },
+      json: true,
+      method: 'DELETE',
       url: `${this.apiServerUrl}/rows/tableid/search/${tdmTableId}/${searchParam}`
     };
 
@@ -779,6 +931,47 @@ export class TdmTablesClient {
 
   }
   /**
+   * Deletes table rows Matching Search Criteria
+   * Allows authorized user to delete rows from TDM Table based on search criteria.
+   * @param tdmTableName string TDM Table Name having these rows
+   * @param searchParam string WHERE clause used to limit results
+   * @param sortOrder string Results are ordered by this column number list
+   * @param startRow integer The first row to show, used for paging
+   * @param pageSize integer The number of rows to return, used for paging
+   */
+  public async DeleteRowsTablenameSearchByTdmTableNameBySearchParam (tdmTableName: string, searchParam: string, authorization: string, sortOrder?: string, startRow?: number, pageSize?: number) {
+
+    const logMessagePrefix = 'TdmTablesClient.DeleteRowsTablenameSearchByTdmTableNameBySearchParam() ';
+
+    const accessToken: string = '';
+
+    const options = {
+      headers: {
+        'Authorization': `${authorization}`,
+        'Accept': 'application/json',
+        'User-Agent': 'automated-testing-request',
+        'X-Conversation-Id': 'automated-testing-request-id'
+      },
+      json: true,
+      method: 'DELETE',
+      url: `${this.apiServerUrl}/rows/tablename/search/${tdmTableName}/${searchParam}`
+    };
+
+    return await requestPromise (options)
+      .then ((response: any) => {
+        log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+        return response;
+      })
+      . catch ( (errorResponse: any) => {
+        log.info (`$[logMessagePrefix] There was an error calling the API.`);
+        log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+        return errorResponse;
+      });
+
+  }
+  /**
    * Retrieve a single Row
    * The TDM rows endpoint returns the requested tables row.
    * @param tdmTableId string TDM Table ID having this row
@@ -837,6 +1030,44 @@ export class TdmTablesClient {
       },
       json: true,
       method: 'PUT',
+      url: `${this.apiServerUrl}/rows/tableid/${tdmTableId}/${rowId}`
+    };
+
+    return await requestPromise (options)
+      .then ((response: any) => {
+        log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+        return response;
+      })
+      . catch ( (errorResponse: any) => {
+        log.info (`$[logMessagePrefix] There was an error calling the API.`);
+        log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+        return errorResponse;
+      });
+
+  }
+  /**
+   * Deletes a row.
+   * Allows authorized user to delete a single row.
+   * @param tdmTableId string TDM Table ID having these rows
+   * @param rowId string Row ID to delete
+   */
+  public async DeleteRowsTableidByTdmTableIdByRowId (tdmTableId: string, rowId: string, authorization: string) {
+
+    const logMessagePrefix = 'TdmTablesClient.DeleteRowsTableidByTdmTableIdByRowId() ';
+
+    const accessToken: string = '';
+
+    const options = {
+      headers: {
+        'Authorization': `${authorization}`,
+        'Accept': 'application/json',
+        'User-Agent': 'automated-testing-request',
+        'X-Conversation-Id': 'automated-testing-request-id'
+      },
+      json: true,
+      method: 'DELETE',
       url: `${this.apiServerUrl}/rows/tableid/${tdmTableId}/${rowId}`
     };
 
@@ -940,7 +1171,7 @@ export class TdmTablesClient {
     const logMessagePrefix = 'TdmTablesClient.PutRowsArchiveTableidByTdmTableId() ';
 
     const options = {
-      body,
+      body: '',
       headers: {
         'Authorization': `${authorization}`,
         'User-Agent': 'automated-testing-request',
@@ -948,6 +1179,43 @@ export class TdmTablesClient {
       },
       json: true,
       method: 'PUT',
+      url: `${this.apiServerUrl}/rows/archive/tableid/${tdmTableId}`
+    };
+
+    return await requestPromise (options)
+      .then ((response: any) => {
+        log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+        return response;
+      })
+      . catch ( (errorResponse: any) => {
+        log.info (`$[logMessagePrefix] There was an error calling the API.`);
+        log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+        return errorResponse;
+      });
+
+  }
+  /**
+   * Deletes an archived row
+   * The endpoint returns the count of archived rows deleted
+   * @param tdmTableId string TDM Table ID whose archived row will be deleted
+   */
+  public async DeleteRowsArchiveTableidByTdmTableId (tdmTableId: string, authorization: string) {
+
+    const logMessagePrefix = 'TdmTablesClient.DeleteRowsArchiveTableidByTdmTableId() ';
+
+    const accessToken: string = '';
+
+    const options = {
+      headers: {
+        'Authorization': `${authorization}`,
+        'Accept': 'application/json',
+        'User-Agent': 'automated-testing-request',
+        'X-Conversation-Id': 'automated-testing-request-id'
+      },
+      json: true,
+      method: 'DELETE',
       url: `${this.apiServerUrl}/rows/archive/tableid/${tdmTableId}`
     };
 
@@ -975,7 +1243,7 @@ export class TdmTablesClient {
     const logMessagePrefix = 'TdmTablesClient.PutRowsArchiveTablenameByTdmTableName() ';
 
     const options = {
-      body,
+      body: '',
       headers: {
         'Authorization': `${authorization}`,
         'User-Agent': 'automated-testing-request',
@@ -983,6 +1251,43 @@ export class TdmTablesClient {
       },
       json: true,
       method: 'PUT',
+      url: `${this.apiServerUrl}/rows/archive/tablename/${tdmTableName}`
+    };
+
+    return await requestPromise (options)
+      .then ((response: any) => {
+        log.debug (`$[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+
+        return response;
+      })
+      . catch ( (errorResponse: any) => {
+        log.info (`$[logMessagePrefix] There was an error calling the API.`);
+        log.debug (`$[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+        return errorResponse;
+      });
+
+  }
+  /**
+   * Deletes an archived row
+   * The endpoint returns the count of archived rows deleted
+   * @param tdmTableName string TDM Table Name whose archived rows will be deleted
+   */
+  public async DeleteRowsArchiveTablenameByTdmTableName (tdmTableName: string, authorization: string) {
+
+    const logMessagePrefix = 'TdmTablesClient.DeleteRowsArchiveTablenameByTdmTableName() ';
+
+    const accessToken: string = '';
+
+    const options = {
+      headers: {
+        'Authorization': `${authorization}`,
+        'Accept': 'application/json',
+        'User-Agent': 'automated-testing-request',
+        'X-Conversation-Id': 'automated-testing-request-id'
+      },
+      json: true,
+      method: 'DELETE',
       url: `${this.apiServerUrl}/rows/archive/tablename/${tdmTableName}`
     };
 
@@ -1011,7 +1316,7 @@ export class TdmTablesClient {
     const logMessagePrefix = 'TdmTablesClient.PutRowsArchiveTableidSearchByTdmTableIdBySearchParam() ';
 
     const options = {
-      body,
+      body: '',
       headers: {
         'Authorization': `${authorization}`,
         'User-Agent': 'automated-testing-request',
@@ -1047,7 +1352,7 @@ export class TdmTablesClient {
     const logMessagePrefix = 'TdmTablesClient.PutRowsArchiveTablenameSearchByTdmTableNameBySearchParam() ';
 
     const options = {
-      body,
+      body: '',
       headers: {
         'Authorization': `${authorization}`,
         'User-Agent': 'automated-testing-request',
@@ -1158,7 +1463,7 @@ export class TdmTablesClient {
     const logMessagePrefix = 'TdmTablesClient.PutRowsRestoreTableidByTdmTableId() ';
 
     const options = {
-      body,
+      body: '',
       headers: {
         'Authorization': `${authorization}`,
         'User-Agent': 'automated-testing-request',
@@ -1193,7 +1498,7 @@ export class TdmTablesClient {
     const logMessagePrefix = 'TdmTablesClient.PutRowsRestoreTablenameByTdmTableName() ';
 
     const options = {
-      body,
+      body: '',
       headers: {
         'Authorization': `${authorization}`,
         'User-Agent': 'automated-testing-request',
@@ -1229,7 +1534,7 @@ export class TdmTablesClient {
     const logMessagePrefix = 'TdmTablesClient.PutRowsRestoreTableidSearchByTdmTableIdBySearchParam() ';
 
     const options = {
-      body,
+      body: '',
       headers: {
         'Authorization': `${authorization}`,
         'User-Agent': 'automated-testing-request',
@@ -1265,7 +1570,7 @@ export class TdmTablesClient {
     const logMessagePrefix = 'TdmTablesClient.PutRowsRestoreTablenameSearchByTdmTableNameBySearchParam() ';
 
     const options = {
-      body,
+      body: '',
       headers: {
         'Authorization': `${authorization}`,
         'User-Agent': 'automated-testing-request',
@@ -1305,7 +1610,7 @@ export class TdmTablesClient {
     const logMessagePrefix = 'TdmTablesClient.PutRowsConsumeTableidByTdmTableId() ';
 
     const options = {
-      body,
+      body: '',
       headers: {
         'Authorization': `${authorization}`,
         'User-Agent': 'automated-testing-request',
@@ -1345,7 +1650,7 @@ export class TdmTablesClient {
     const logMessagePrefix = 'TdmTablesClient.PutRowsConsumeTablenameByTdmTableName() ';
 
     const options = {
-      body,
+      body: '',
       headers: {
         'Authorization': `${authorization}`,
         'User-Agent': 'automated-testing-request',
@@ -1385,7 +1690,7 @@ export class TdmTablesClient {
     const logMessagePrefix = 'TdmTablesClient.PutRowsConsumeTableidSearchByTdmTableIdBySearchParam() ';
 
     const options = {
-      body,
+      body: '',
       headers: {
         'Authorization': `${authorization}`,
         'User-Agent': 'automated-testing-request',
@@ -1425,7 +1730,7 @@ export class TdmTablesClient {
     const logMessagePrefix = 'TdmTablesClient.PutRowsConsumeTablenameSearchByTdmTableNameBySearchParam() ';
 
     const options = {
-      body,
+      body: '',
       headers: {
         'Authorization': `${authorization}`,
         'User-Agent': 'automated-testing-request',

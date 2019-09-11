@@ -7,12 +7,9 @@
 
     const logMessagePrefix = '{{clientLibraryName}}.{{functionName}}() ';
 
-    {{#formDataTs}}
-    {{.}}
-    {{/formDataTs}}
+    const accessToken: string = '';
 
     const options = {
-      {{bodyOrFormField}},
       headers: {
         {{#headersCustom}}
         {{.}},
@@ -21,7 +18,7 @@
         'X-Conversation-Id': 'automated-testing-request-id'
       },
       json: true,
-      method: 'POST',
+      method: 'DELETE',
       url: `${this.apiServerUrl}{{endpointPath}}`
     };
 

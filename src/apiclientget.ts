@@ -1,6 +1,5 @@
 import { listenerCount } from 'cluster';
 import fs from 'fs';
-import { request } from 'http';
 import mustache from 'mustache';
 import * as requestPromise from 'request-promise';
 import { exitOnError } from 'winston';
@@ -10,7 +9,9 @@ mustache.escape =  (text) => text;
 
 const moduleTemplate = fs.readFileSync ('./data/templates/moduleTemplateApiClient.mustache', 'utf8');
 const functionTemplateGET = fs.readFileSync ('./data/templates/functionTemplateGET.mustache', 'utf8');
+const functionTemplateDELETE = fs.readFileSync ('./data/templates/functionTemplateDELETE.mustache', 'utf8');
 const functionTemplatePOST = fs.readFileSync ('./data/templates/functionTemplatePOST.mustache', 'utf8');
+const functionTemplatePUT = fs.readFileSync ('./data/templates/functionTemplatePUT.mustache', 'utf8');
 const interfaceTemplate = fs.readFileSync ('./data/templates/interfaceTemplate.mustache', 'utf8');
 
 /**
@@ -70,7 +71,7 @@ export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: 
               functions += CreatePutFunction (path, swaggerJson.paths[path][method], clientLibraryName, swaggerJson);
               break;
             case 'delete':
-              //
+              functions += CreateDeleteFunction (path, swaggerJson.paths[path][method], clientLibraryName);
               break;
             default:
               //
@@ -86,17 +87,109 @@ export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: 
 
 }
 
-function CreatePutFunction (path: string, apiRequestDefinition: any, clientLibraryName: string, swaggerJson: any): string {
-  const isPut = true;
+function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
 
-  return CreatePostFunction (path, apiRequestDefinition, clientLibraryName, swaggerJson, isPut);
+  const logMessagePrefix = 'CreateGetFunction() ';
+
+  // break path into an array, and capitalize each array element
+  const pathArray = path.split ('/');
+  for (let i = 0; i < pathArray.length; i++) {
+    if (pathArray[i].charAt (0).match (/\{/)) {
+      // uppercase the second char, char one is a curly brace
+      pathArray[i] = pathArray[i].charAt (1).toUpperCase () + pathArray[i].slice (2);
+      // prefix the 'filter name' with By (e.g. ByColumnName) and remove the curly braces
+      pathArray[i] = 'By' + pathArray[i].replace ('{', '').replace ('}', '');
+    }
+    if (pathArray[i].charAt (0).match (/[a-zA-z]/)) {
+      pathArray[i] = pathArray[i].charAt (0).toUpperCase () + pathArray[i].slice (1);
+    }
+  }
+  // join the array elements into a single camelcase word
+  const functionName = 'Get' + pathArray.join ('');
+
+  const parameterSignature = GenerateFunctionParameterSignature (apiRequestDefinition);
+
+  const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
+
+  let headerAccept = '';
+  for (const produces of apiRequestDefinition.produces) {
+    if (produces.toLowerCase ().includes ('application/json')) {
+      headerAccept = `'Accept': 'application/json'`;
+    }
+  }
+  const headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
+  headersCustom.push (headerAccept);
+
+  // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${; let; })
+  const pathUpdated = path.replace (/\{/g, '${');
+
+  const templateInputs = {
+    clientLibraryName,
+    endpointPath: `${pathUpdated}`,
+    functionDocumentation,
+    functionName,
+    headersCustom,
+    parameterSignature
+  };
+
+  const functionString = mustache.render (functionTemplateGET, templateInputs);
+
+  return functionString;
 }
 
-function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibraryName: string, swaggerJson: any, isPut?: boolean = false): string {
+function CreateDeleteFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
 
-  const logMessagePrefix = 'CreatePostFunction() ';
+  const logMessagePrefix = 'CreateGetFunction() ';
 
-  const requestMethodType = isPut ? 'PUT' : 'POST';
+  // break path into an array, and capitalize each array element
+  const pathArray = path.split ('/');
+  for (let i = 0; i < pathArray.length; i++) {
+    if (pathArray[i].charAt (0).match (/\{/)) {
+      // uppercase the second char, char one is a curly brace
+      pathArray[i] = pathArray[i].charAt (1).toUpperCase () + pathArray[i].slice (2);
+      // prefix the 'filter name' with By (e.g. ByColumnName) and remove the curly braces
+      pathArray[i] = 'By' + pathArray[i].replace ('{', '').replace ('}', '');
+    }
+    if (pathArray[i].charAt (0).match (/[a-zA-z]/)) {
+      pathArray[i] = pathArray[i].charAt (0).toUpperCase () + pathArray[i].slice (1);
+    }
+  }
+  // join the array elements into a single camelcase word
+  const functionName = 'Delete' + pathArray.join ('');
+
+  const parameterSignature = GenerateFunctionParameterSignature (apiRequestDefinition);
+
+  const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
+
+  let headerAccept = '';
+  for (const produces of apiRequestDefinition.produces) {
+    if (produces.toLowerCase ().includes ('application/json')) {
+      headerAccept = `'Accept': 'application/json'`;
+    }
+  }
+  const headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
+  headersCustom.push (headerAccept);
+
+  // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${; let; })
+  const pathUpdated = path.replace (/\{/g, '${');
+
+  const templateInputs = {
+    clientLibraryName,
+    endpointPath: `${pathUpdated}`,
+    functionDocumentation,
+    functionName,
+    headersCustom,
+    parameterSignature
+  };
+
+  const functionString = mustache.render (functionTemplateDELETE, templateInputs);
+
+  return functionString;
+}
+
+function CreatePutFunction (path: string, apiRequestDefinition: any, clientLibraryName: string, swaggerJson: any): string {
+
+  const logMessagePrefix = 'CreatePutFunction() ';
 
   // break path into an array, and capitalize each array element
   const pathArray = path.replace (/[\.]/g, '_').split ('/');
@@ -112,7 +205,8 @@ function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibr
     }
   }
   // join the array elements into a single camelcase word, TODO: Create an optional map (API path => ReadableName) to allow better function names
-  const functionName = `${requestMethodType[0]}${requestMethodType.toLowerCase ().slice (1)}${pathArray.join ('')}`;
+  const functionName = 'Put' + pathArray.join ('');
+
   const parameterSignature = GenerateFunctionParameterSignature (apiRequestDefinition);
 
   const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
@@ -124,9 +218,11 @@ function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibr
 
   const formDataTs: string[] = GenerateFormDataArray (apiRequestDefinition);
 
-  const bodyOrFormField = formDataTs.length > 0 ? 'form' : 'body' ;
+  let bodyOrFormField: string = `body: ''`;
+  if (formDataTs.length > 0) { bodyOrFormField = 'form'; }
+  if (parameterSignature.search ('body:') > 1) { bodyOrFormField = 'body'; }
 
-    // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${var})
+  // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${var})
   const pathUpdated = path.replace (/\{/g, '${');
 
   const templateInputs = {
@@ -137,8 +233,60 @@ function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibr
     functionDocumentation,
     functionName,
     headersCustom,
-    parameterSignature,
-    requestMethodType
+    parameterSignature
+  };
+
+  const functionString = mustache.render (functionTemplatePUT, templateInputs);
+
+  return functionString;
+}
+function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibraryName: string, swaggerJson: any): string {
+
+  const logMessagePrefix = 'CreatePostFunction() ';
+
+  // break path into an array, and capitalize each array element
+  const pathArray = path.replace (/[\.]/g, '_').split ('/');
+  for (let i = 0; i < pathArray.length; i++) {
+    if (pathArray[i].charAt (0).match (/\{/)) {
+      // uppercase the second char, char one is a curly brace
+      pathArray[i] = pathArray[i].charAt (1).toUpperCase () + pathArray[i].slice (2);
+      // prefix the 'filter name' with By (e.g. ByColumnName) and remove the curly braces
+      pathArray[i] = 'By' + pathArray[i].replace ('{', '').replace ('}', '');
+    }
+    if (pathArray[i].charAt (0).match (/[a-zA-z]/)) {
+      pathArray[i] = pathArray[i].charAt (0).toUpperCase () + pathArray[i].slice (1);
+    }
+  }
+  // join the array elements into a single camelcase word, TODO: Create an optional map (API path => ReadableName) to allow better function names
+  const functionName = 'Post' + pathArray.join ('');
+
+  const parameterSignature = GenerateFunctionParameterSignature (apiRequestDefinition);
+
+  const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
+
+  const headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
+  const headerAccept = GenerateAcceptHeader (apiRequestDefinition, swaggerJson);
+  const headerContentType = GenerateContentTypeHeader (apiRequestDefinition, swaggerJson);
+  headersCustom.concat (headerAccept, headerContentType);
+
+  const formDataTs: string[] = GenerateFormDataArray (apiRequestDefinition);
+
+  let bodyOrFormField: string = `body: ''`;
+  if (formDataTs.length > 0) { bodyOrFormField = 'form'; }
+  if (parameterSignature.search ('body:') > 1) { bodyOrFormField = 'body'; }
+
+  // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${var})
+  const pathUpdated = path.replace (/\{/g, '${');
+
+  const templateInputs = {
+    bodyOrFormField,
+    clientLibraryName,
+    endpointPath: `${pathUpdated}`,
+    formDataTs,
+    functionDocumentation,
+    functionName,
+    headersCustom,
+    parameterSignature
   };
 
   const functionString = mustache.render (functionTemplatePOST, templateInputs);
@@ -226,56 +374,6 @@ function GenerateContentTypeHeader (apiRequestDefinition: any, swaggerJson: any)
   }
 
   return [headerContentType];
-}
-
-function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
-
-  const logMessagePrefix = 'CreateGetFunction() ';
-
-  // break path into an array, and capitalize each array element
-  const pathArray = path.split ('/');
-  for (let i = 0; i < pathArray.length; i++) {
-    if (pathArray[i].charAt (0).match (/\{/)) {
-      // uppercase the second char, char one is a curly brace
-      pathArray[i] = pathArray[i].charAt (1).toUpperCase () + pathArray[i].slice (2);
-      // prefix the 'filter name' with By (e.g. ByColumnName) and remove the curly braces
-      pathArray[i] = 'By' + pathArray[i].replace ('{', '').replace ('}', '');
-    }
-    if (pathArray[i].charAt (0).match (/[a-zA-z]/)) {
-      pathArray[i] = pathArray[i].charAt (0).toUpperCase () + pathArray[i].slice (1);
-    }
-  }
-  // join the array elements into a single camelcase word
-  const functionName = 'Get' + pathArray.join ('');
-
-  const parameterSignature = GenerateFunctionParameterSignature (apiRequestDefinition);
-
-  const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
-
-  let headerAccept = '';
-  for (const produces of apiRequestDefinition.produces) {
-    if (produces.toLowerCase ().includes ('application/json')) {
-      headerAccept = `'Accept': 'application/json'`;
-    }
-  }
-  const headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
-  headersCustom.push (headerAccept);
-
-  // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${; let; })
-  const pathUpdated = path.replace (/\{/g, '${');
-
-  const templateInputs = {
-    clientLibraryName,
-    endpointPath: `${pathUpdated}`,
-    functionDocumentation,
-    functionName,
-    headersCustom,
-    parameterSignature
-  };
-
-  const functionString = mustache.render (functionTemplateGET, templateInputs);
-
-  return functionString;
 }
 
 function GenerateFunctionDocumentation (getDef: any): string[] {
