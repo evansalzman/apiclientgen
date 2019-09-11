@@ -63,7 +63,7 @@ export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: 
               functions += CreateGetFunction (path, swaggerJson.paths[path][method], clientLibraryName);
               break;
             case 'post':
-              functions += CreatePostFunction (path, swaggerJson.paths[path][method], clientLibraryName);
+              functions += CreatePostFunction (path, swaggerJson.paths[path][method], clientLibraryName, swaggerJson);
               break;
             case 'put':
               //
@@ -85,12 +85,12 @@ export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: 
 
 }
 
-function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
+function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibraryName: string, swaggerJson: any): string {
 
   const logMessagePrefix = 'CreatePostFunction() ';
 
   // break path into an array, and capitalize each array element
-  const pathArray = path.split ('/');
+  const pathArray = path.replace (/[\.]/g, '_').split ('/');
   for (let i = 0; i < pathArray.length; i++) {
     if (pathArray[i].charAt (0).match (/\{/)) {
       // uppercase the second char, char one is a curly brace
@@ -109,22 +109,23 @@ function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibr
 
   const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
 
-  let headerAccept = '';
-  for (const produces of apiRequestDefinition.produces) {
-    if (produces.toLowerCase ().includes ('application/json')) {
-      headerAccept = `'Accept': 'application/json'`;
-    }
-  }
   const headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
-  // add `Accept: {accept value}` to the top of the headers
-  headersCustom.concat (headerAccept);
+  const headerAccept = GenerateAcceptHeader (apiRequestDefinition, swaggerJson);
+  const headerContentType = GenerateContentTypeHeader (apiRequestDefinition, swaggerJson);
+  headersCustom.concat (headerAccept, headerContentType);
+
+  const formDataTs: string[] = GenerateFormDataArray (apiRequestDefinition);
+
+  const bodyOrFormField = formDataTs.length > 0 ? 'form' : 'body' ;
 
     // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${var})
   const pathUpdated = path.replace (/\{/g, '${');
 
   const templateInputs = {
+    bodyOrFormField,
     clientLibraryName,
     endpointPath: `${pathUpdated}`,
+    formDataTs,
     functionDocumentation,
     functionName,
     headersCustom,
@@ -134,6 +135,88 @@ function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibr
   const functionString = mustache.render (functionTemplatePOST, templateInputs);
 
   return functionString;
+}
+
+function GenerateFormDataArray (apiRequestDefinition: any): string[] {
+
+  const formData: string[] = [];
+  let formDataHead = 'const form = {';
+  const formDataFoot = '};';
+
+  for (const parameter of apiRequestDefinition.parameters) {
+    // put an object def 'head' on an array, only once
+    if (parameter.in === 'formData') {
+      if (formDataHead) {
+        formData.push (formDataHead);
+        formDataHead = null;
+      }
+      // add the `fieldname` to the array, shorthand for 'fieldname: fieldname'
+      formData.push (`  ${parameter.name},`);
+    }
+  }
+
+  if (formData.length > 0) {
+    //remove char (a comma) from last entry in list
+    formData[formData.length - 1] = formData[formData.length - 1].slice (0, formData[formData.length - 1].length - 1);
+    // add the 'foot' of the obj def
+    formData.push (formDataFoot);
+  }
+
+  return formData;
+}
+
+function GenerateAcceptHeader (apiRequestDefinition: any, swaggerJson: any): string[] {
+  // create an `Accept: {acceptType}` entry for the header (if it's not defined in the request def, look for a top level default in the API doc)
+  let headerAccept = '';
+  if (apiRequestDefinition.hasOwnProperty ('produces')) {
+    for (const endpointProduces of apiRequestDefinition.produces) {
+      if (endpointProduces.toLowerCase ().includes ('application/json')) {
+        headerAccept = `'Accept': 'application/json'`;
+      }
+      else if (endpointProduces.toLowerCase ().includes ('application/xml')) {
+        headerAccept = `'Accept': 'application/xml'`;
+      }
+    }
+  }
+  else if (swaggerJson.hasOwnProperty ('produces')) {
+    for (const apiProduces of swaggerJson.produces) {
+      if (apiProduces.toLowerCase ().includes ('application/json')) {
+        headerAccept = `'Accept': 'application/json'`;
+      }
+      else if (apiProduces.toLowerCase ().includes ('application/xml')) {
+        headerAccept = `'Accept': 'application/xml'`;
+      }
+    }
+  }
+
+  return [headerAccept];
+}
+
+function GenerateContentTypeHeader (apiRequestDefinition: any, swaggerJson: any): string[] {
+  // create an `Content-Type: {contentType}` entry for the header (if it's not defined in the request def, look for a top level default in the API doc)
+  let headerContentType = '';
+  if (apiRequestDefinition.hasOwnProperty ('consumes')) {
+    for (const endpointConsumes of apiRequestDefinition.consumes) {
+      if (endpointConsumes.toLowerCase ().includes ('application/json')) {
+        headerContentType = `'Content-Type': 'application/json'`;
+      }
+      else if (endpointConsumes.toLowerCase ().includes ('application/x-www-form-urlencoded')) {
+        headerContentType = `'Content-Type': 'application/x-www-form-urlencoded'`;
+      }
+    }
+  }
+  else if (swaggerJson.hasOwnProperty ('consumes')) {
+    for (const apiProduces of swaggerJson.produces) {
+      if (apiProduces.toLowerCase ().includes ('application/json')) {
+        headerContentType = `'Content-type': 'application/json'`;
+      }
+      else if (apiProduces.toLowerCase ().includes ('application/x-www-form-urlencoded')) {
+        headerContentType = `'Content-types': 'application/x-www-form-urlencoded'`;
+      }
+    }
+  }
+
+  return [headerContentType];
 }
 
 function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
@@ -169,7 +252,7 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
   const headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
   headersCustom.push (headerAccept);
 
-  // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${var})
+  // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${; let; })
   const pathUpdated = path.replace (/\{/g, '${');
 
   const templateInputs = {
@@ -276,7 +359,7 @@ export function GenerateInterfaces (swaggerJson: any ): string {
     const interfaceProps: any[] = [];
     const interfaceDocumentation: string[] = [];
     const currDef: any = entry[1];
-    if (currDef.hasOwnProperty ('required') && currDef.hasOwnProperty ('properties')) {
+    if (currDef.hasOwnProperty ('properties')) {
 
       Object.keys (currDef.properties).forEach ( (propertyName) => {
         // ensure that the name starts with a lowercase
@@ -300,17 +383,19 @@ export function GenerateInterfaces (swaggerJson: any ): string {
             propType = 'any[]';
         }
         // is the propname optional? (check w/the original prop name, not the fixed 'uncapitalized' one)
-        if ( ! currDef.required.includes (propertyName) ) {
+        if ( currDef.hasOwnProperty ('required') && !currDef.required.includes (propertyName) ) {
           propNameForDoc = `[${propName}]`;
           propName = `${propName}?`;
         }
+        // add a line for the interface defining this property.
         interfaceProps.push (`${propName}: ${propType}`);
+        // create a line for the interface jsdoc that describes the property.
         interfaceDocumentation.push (`@property {${propType}} ${propNameForDoc} - ${propDescription}`);
       });
       const genResult = GenerateInterfaceString (interfaceName, interfaceProps, interfaceDocumentation);
       interfacesString += genResult;
     } else {
-      console.log (`${logMessagePrefix} failed to find 'properties' and 'required' lists for ${interfaceName}`);
+      console.log (`${logMessagePrefix} failed to find 'properties' array for ${interfaceName}`);
       process.exit (1);
     }
   });

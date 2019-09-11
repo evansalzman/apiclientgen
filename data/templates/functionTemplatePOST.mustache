@@ -7,8 +7,12 @@
 
     const logMessagePrefix = '{{clientLibraryName}}.{{functionName}}() ';
 
+    {{#formDataTs}}
+    {{.}}
+    {{/formDataTs}}
+
     const options = {
-      body,
+      {{bodyOrFormField}},
       headers: {
         {{#headersCustom}}
         {{.}},

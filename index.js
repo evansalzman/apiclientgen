@@ -27,6 +27,6 @@ const tdmAuthApiUrl = 'https://stage.tdmauth.wdprapps.disney.com/docs/TDMAuth-V1
 const tdmAuthApiClientName = 'TdmAuthClient';
 apiclientget.GenerateApiClientModule (tdmAuthApiUrl, tdmAuthApiClientName);
 
-// const tdmTablesApiUrl = 'https://stage.tdmtables.wdprapps.disney.com/docs/TDMTables-V1-user.json';
-// const tdmTablesApiClientName = 'TdmTablesClient';
-// apiclientget.GenerateApiClientModule (tdmTablesApiUrl, tdmTablesApiClientName);
+const tdmTablesApiUrl = 'https://stage.tdmtables.wdprapps.disney.com/docs/TDMTables-V1-user.json';
+const tdmTablesApiClientName = 'TdmTablesClient';
+apiclientget.GenerateApiClientModule (tdmTablesApiUrl, tdmTablesApiClientName);

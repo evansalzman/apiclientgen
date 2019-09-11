@@ -1,12 +1,16 @@
-import { IAddUpdateColumnRequest, TdmClient } from './TdmClient/TdmClient';
+import { TdmAuthClient } from './TdmAuthClient/TdmAuthClient';
+import { IAddUpdateColumnRequest, TdmTablesClient } from './TdmTablesClient/TdmTablesClient';
 
-const basePath: string = 'https://stage.tdmtables.wdprapps.disney.com';
-const apiUri: string = '/rest/v1';
+const basePathAuth: string = 'https://stage.tdmauth.wdprapps.disney.com/v1';
+const basePath: string = 'https://stage.tdmtables.wdprapps.disney.com/rest/v1';
 
-const tdm = new TdmClient (`${basePath}${apiUri}`);
+const tdm = new TdmTablesClient (basePath);
+const tdmAuth = new TdmAuthClient (basePathAuth);
 
 async function testModule () {
-  const result = await tdm.GetTdmtables (`Bearer \${accessToken}`);
+  const authResponse = await tdmAuth.PostToken_oauth2 (process.env.GQE_TEST_TDOD_USERNAME, process.env.GQE_TEST_TDOD_PASSWORD);
+  console.log (`DEBUG -- authResponse ${require ('util').inspect (authResponse, {colors: true, depth: 2})}`);
+  const result = await tdm.GetTdmtables (`Bearer ${authResponse.accessToken}`);
   const body: IAddUpdateColumnRequest = {
     active: true,
     columnName: '',
