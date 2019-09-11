@@ -1,4 +1,4 @@
-const apiclientget = require ('./dist/apiclientget');
+const acw = require ('./dist/apiclientwriter');
 
 // async function LoadSwaggerJsonTEST () {
 //   await apiclientget.LoadSwaggerJson ('https://stage.tdmtables.wdprapps.disney.com/docs/TDMTables-V1-user.json');
@@ -25,8 +25,8 @@ const apiclientget = require ('./dist/apiclientget');
 
 const tdmAuthApiUrl = 'https://stage.tdmauth.wdprapps.disney.com/docs/TDMAuth-V1.json';
 const tdmAuthApiClientName = 'TdmAuthClient';
-apiclientget.GenerateApiClientModule (tdmAuthApiUrl, tdmAuthApiClientName);
+acw.Write (tdmAuthApiUrl, tdmAuthApiClientName);
 
 const tdmTablesApiUrl = 'https://stage.tdmtables.wdprapps.disney.com/docs/TDMTables-V1-user.json';
 const tdmTablesApiClientName = 'TdmTablesClient';
-apiclientget.GenerateApiClientModule (tdmTablesApiUrl, tdmTablesApiClientName);
+acw.Write (tdmTablesApiUrl, tdmTablesApiClientName);

@@ -19,7 +19,7 @@ const interfaceTemplate = fs.readFileSync ('./data/templates/interfaceTemplate.m
  * @param swaggerJsonUrl {string} The URL for the swagger json document
  * @param apiClientName {string} The name you want to give the api client module
  */
-export async function GenerateApiClientModule (swaggerJsonUrl: string, apiClientName: string) {
+export async function Write (swaggerJsonUrl: string, apiClientName: string) {
 
   const swaggerJson = await LoadSwaggerJson (swaggerJsonUrl);
   const functionsString = await GenerateClientCalls (swaggerJson, apiClientName); // TODO: make the client lib name a passed in param
@@ -531,13 +531,13 @@ export function GenerateModule (functionsString: string, interfaceString: string
   };
 
   const moduleString = mustache.render (moduleTemplate, templateInputs);
-  if ( ! fs.existsSync (`./src/`)) {
-    fs.mkdirSync (`./src`);
+  if ( ! fs.existsSync (`./out/`)) {
+    fs.mkdirSync (`./out`);
   }
-  if ( ! fs.existsSync (`./src/${apiClientName}/`)) {
-    fs.mkdirSync (`./src/${apiClientName}`);
+  if ( ! fs.existsSync (`./out/${apiClientName}/`)) {
+    fs.mkdirSync (`./out/${apiClientName}`);
   }
-  fs.writeFileSync ( `./src/${apiClientName}/${apiClientName}.ts`, moduleString);
+  fs.writeFileSync ( `./out/${apiClientName}/${apiClientName}.ts`, moduleString);
 
   return moduleString;
 }
