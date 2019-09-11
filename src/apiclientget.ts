@@ -1,5 +1,6 @@
 import { listenerCount } from 'cluster';
 import fs from 'fs';
+import { request } from 'http';
 import mustache from 'mustache';
 import * as requestPromise from 'request-promise';
 import { exitOnError } from 'winston';
@@ -66,7 +67,7 @@ export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: 
               functions += CreatePostFunction (path, swaggerJson.paths[path][method], clientLibraryName, swaggerJson);
               break;
             case 'put':
-              //
+              functions += CreatePutFunction (path, swaggerJson.paths[path][method], clientLibraryName, swaggerJson);
               break;
             case 'delete':
               //
@@ -85,9 +86,17 @@ export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: 
 
 }
 
-function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibraryName: string, swaggerJson: any): string {
+function CreatePutFunction (path: string, apiRequestDefinition: any, clientLibraryName: string, swaggerJson: any): string {
+  const isPut = true;
+
+  return CreatePostFunction (path, apiRequestDefinition, clientLibraryName, swaggerJson, isPut);
+}
+
+function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibraryName: string, swaggerJson: any, isPut?: boolean = false): string {
 
   const logMessagePrefix = 'CreatePostFunction() ';
+
+  const requestMethodType = isPut ? 'PUT' : 'POST';
 
   // break path into an array, and capitalize each array element
   const pathArray = path.replace (/[\.]/g, '_').split ('/');
@@ -103,8 +112,7 @@ function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibr
     }
   }
   // join the array elements into a single camelcase word, TODO: Create an optional map (API path => ReadableName) to allow better function names
-  const functionName = 'Post' + pathArray.join ('');
-
+  const functionName = `${requestMethodType[0]}${requestMethodType.toLowerCase ().slice (1)}${pathArray.join ('')}`;
   const parameterSignature = GenerateFunctionParameterSignature (apiRequestDefinition);
 
   const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
@@ -129,7 +137,8 @@ function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibr
     functionDocumentation,
     functionName,
     headersCustom,
-    parameterSignature
+    parameterSignature,
+    requestMethodType
   };
 
   const functionString = mustache.render (functionTemplatePOST, templateInputs);
