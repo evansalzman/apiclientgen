@@ -11,11 +11,10 @@
     "declaration": true
   },
   "include": [
-    "src/**/*"
+    "./src/**/*"
   ],
   "exclude": [
     "node_modules",
-    "test",
     "dist",
     "data"
   ]

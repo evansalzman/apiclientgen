@@ -1,8 +1,6 @@
-import { listenerCount } from 'cluster';
 import fs from 'fs';
 import mustache from 'mustache';
 import * as requestPromise from 'request-promise';
-import { exitOnError } from 'winston';
 
 // disable mustache HTML escaping
 mustache.escape =  (text) => text;
@@ -30,10 +28,10 @@ export async function Write (swaggerJsonUrl: string, apiClientName: string) {
 
 /**
  * Load the swagger json document describing the API
- * @param url the URL of the swagger json doc
+ * @param url the URL of the swagger json doc ppppppp
  */
 export async function LoadSwaggerJson ( url: string ) {
-  const logMessagePrefix = 'LoadSwaggerJson() ';
+  const logMessagePrefix = 'apiclientwriter.LoadSwaggerJson() ';
 
   return await requestPromise.get (url)
   .then ((response: any) => {
@@ -44,7 +42,7 @@ export async function LoadSwaggerJson ( url: string ) {
   })
   .catch ((errorResponse: any) => {
 
-    console.log (`DEBUG -- errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+    console.log (`${logMessagePrefix} errorResponse: ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
 
     return errorResponse;
   });
@@ -52,7 +50,7 @@ export async function LoadSwaggerJson ( url: string ) {
 
 export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: string): Promise<string> {
 
-  const logMessagePrefix = 'apiclientget.GenereateClientCalls() ';
+  const logMessagePrefix = 'apiclientwriter.GenereateClientCalls() ';
 
   let functions = '';
 
@@ -75,7 +73,7 @@ export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: 
               break;
             default:
               //
-              console.log (`DEBUG -- ${logMessagePrefix} ${method} method not implemented. implement me!`);
+              console.log (`${logMessagePrefix} ${method} method not implemented. implement me!`);
               break;
           }
         }
@@ -89,7 +87,7 @@ export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: 
 
 function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
 
-  const logMessagePrefix = 'CreateGetFunction() ';
+  const logMessagePrefix = 'apiclientwriter.CreateGetFunction() ';
 
   // break path into an array, and capitalize each array element
   const pathArray = path.split ('/');
@@ -111,6 +109,8 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
 
   const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
 
+  const queryString = GenerateApiQueryString (apiRequestDefinition);
+
   let headerAccept = '';
   for (const produces of apiRequestDefinition.produces) {
     if (produces.toLowerCase ().includes ('application/json')) {
@@ -125,7 +125,7 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
 
   const templateInputs = {
     clientLibraryName,
-    endpointPath: `${pathUpdated}`,
+    endpointPath: `${pathUpdated}${queryString}`,
     functionDocumentation,
     functionName,
     headersCustom,
@@ -137,9 +137,22 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
   return functionString;
 }
 
+function GenerateApiQueryString (apiRequestDefinition) {
+  let paramPrefix = '?';
+  let queryString = '';
+  for (const parameter of apiRequestDefinition.parameters) {
+    if (parameter.in.toLowerCase () === 'query') {
+      queryString += `${paramPrefix}${queryString}${parameter.name}=\${parameter.name}`;
+      paramPrefix = '&';
+    }
+  }
+
+  return encodeURI (queryString);
+}
+
 function CreateDeleteFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
 
-  const logMessagePrefix = 'CreateGetFunction() ';
+  const logMessagePrefix = 'apiclientwriter.CreateGetFunction() ';
 
   // break path into an array, and capitalize each array element
   const pathArray = path.split ('/');
@@ -189,7 +202,7 @@ function CreateDeleteFunction (path: string, apiRequestDefinition: any, clientLi
 
 function CreatePutFunction (path: string, apiRequestDefinition: any, clientLibraryName: string, swaggerJson: any): string {
 
-  const logMessagePrefix = 'CreatePutFunction() ';
+  const logMessagePrefix = 'apiclientwriter.CreatePutFunction() ';
 
   // break path into an array, and capitalize each array element
   const pathArray = path.replace (/[\.]/g, '_').split ('/');
@@ -242,7 +255,7 @@ function CreatePutFunction (path: string, apiRequestDefinition: any, clientLibra
 }
 function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibraryName: string, swaggerJson: any): string {
 
-  const logMessagePrefix = 'CreatePostFunction() ';
+  const logMessagePrefix = 'apiclientwriter.CreatePostFunction() ';
 
   // break path into an array, and capitalize each array element
   const pathArray = path.replace (/[\.]/g, '_').split ('/');
@@ -457,7 +470,7 @@ function GenerateFunctionParameterSignature (apiRequestDefinition: any): string 
 
 export function GenerateInterfaces (swaggerJson: any ): string {
 
-  const logMessagePrefix = 'apiClientGet.GenerateInterfaces() ';
+  const logMessagePrefix = 'apiclientwriter.GenerateInterfaces() ';
 
   let interfacesString: string = '';
 

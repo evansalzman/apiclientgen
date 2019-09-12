@@ -2,6 +2,9 @@
 node_modules/
 dist/
 
+# output directory
+out/
+
 # dynamic files
 package-lock.json
 *.log
