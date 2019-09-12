@@ -137,17 +137,20 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
   return functionString;
 }
 
-function GenerateApiQueryString (apiRequestDefinition) {
+function GenerateApiQueryString (apiRequestDefinition: any): string {
   let paramPrefix = '?';
   let queryString = '';
+  let counter = 0;
   for (const parameter of apiRequestDefinition.parameters) {
     if (parameter.in.toLowerCase () === 'query') {
-      queryString += `${paramPrefix}${queryString}${parameter.name}=\${parameter.name}`;
+      console.log (counter++, parameter.name);
+      queryString += `${paramPrefix}${parameter.name}=\${${parameter.name}}`;
       paramPrefix = '&';
     }
   }
+  console.log  (queryString);
 
-  return encodeURI (queryString);
+  return queryString;
 }
 
 function CreateDeleteFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
