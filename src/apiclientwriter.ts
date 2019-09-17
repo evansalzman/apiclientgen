@@ -3,7 +3,7 @@ import mustache from 'mustache';
 import * as requestPromise from 'request-promise';
 
 // disable mustache HTML escaping
-mustache.escape =  (text) => text;
+mustache.escape =  (text: any) => text;
 
 const moduleTemplate = fs.readFileSync ('./data/templates/moduleTemplateApiClient.mustache', 'utf8');
 const functionTemplateGET = fs.readFileSync ('./data/templates/functionTemplateGET.mustache', 'utf8');
@@ -11,19 +11,58 @@ const functionTemplateDELETE = fs.readFileSync ('./data/templates/functionTempla
 const functionTemplatePOST = fs.readFileSync ('./data/templates/functionTemplatePOST.mustache', 'utf8');
 const functionTemplatePUT = fs.readFileSync ('./data/templates/functionTemplatePUT.mustache', 'utf8');
 const interfaceTemplate = fs.readFileSync ('./data/templates/interfaceTemplate.mustache', 'utf8');
+const urlParamsConstructorTemplate = fs.readFileSync ('./data/templates/urlParamConstructorTemplate.mustache', 'utf8');
 
 /**
  * Based on a swagger doc, create an API client module for NodeJS
  * @param swaggerJsonUrl {string} The URL for the swagger json document
  * @param apiClientName {string} The name you want to give the api client module
+ * @param {swaggerCallback} {function} a callback that handles any swagger.json customizations/fixes that are desired. Receives swagger.json, should return updated swagger.json.
+ * @param {moudleCallback} {function} a callback that handles any scode customizations/fixes that are desired. Receives apiClient code, should return updated apiClientCode.
  */
-export async function Write (swaggerJsonUrl: string, apiClientName: string) {
+export async function Write (swaggerJsonUrl: string, apiClientName: string, swaggerCallback?: any, moduleCallback?: any): Promise<number> {
 
   const swaggerJson = await LoadSwaggerJson (swaggerJsonUrl);
-  const functionsString = await GenerateClientCalls (swaggerJson, apiClientName); // TODO: make the client lib name a passed in param
-  const interfaceString = await GenerateInterfaces (swaggerJson);
-  await GenerateModule (functionsString, interfaceString, apiClientName);
+  const swaggerUpdated = swaggerCallback ? swaggerCallback (swaggerJson) : swaggerJson;
+  const functionsString = await GenerateClientCalls (swaggerUpdated, apiClientName); // TODO: make the client lib name a passed in param
+  const interfaceString = await GenerateInterfaces (swaggerUpdated);
+  const moduleString = await GenerateModule (functionsString, interfaceString, apiClientName);
+  const moduleStringUpdated = moduleCallback ? moduleCallback (moduleString) : moduleString;
+  let moduleWriteErrorCode = WriteModule (moduleStringUpdated, apiClientName);
+  moduleWriteErrorCode = SetupAsNpmProject(apiClientName) ? moduleWriteErrorCode : 1; // if setup completes cleanly, stick with the existing error code.
 
+  return moduleWriteErrorCode;
+}
+
+/**
+ * Copy all of the template config files in the new api client 'project' directory
+ * @param apiClientName 
+ */
+function SetupAsNpmProject(apiClientName: string): number {
+  let errorCode = 0;
+  const fileDestinations: any = {
+    './data/templateConfigs/.eslintIgnore': `./out/${apiClientName}/.eslintIgnore`,
+    './data/templateConfigs/.eslintrc.json': `./out/${apiClientName}/.eslintrc.json`,
+    './data/templateConfigs/.gitignore': `./out/${apiClientName}/.gitignore`,
+    './data/templateConfigs/.prettierrc': `./out/${apiClientName}/.prettierrc`,
+    './data/templateConfigs/.tslint.json': `./out/${apiClientName}/.tslint.json`,
+    './data/templateConfigs/package.json': `./out/${apiClientName}/package.json`,
+    './data/templateConfigs/tsconfig.json': `./out/${apiClientName}/tsconfig.json`,
+    './data/templateConfigs/.vscode/launch.json': `./out/${apiClientName}/.vscode/launch.json`,
+    './data/templateConfigs/.vscode/settings.json': `./out/${apiClientName}/.vscode/settings.json`,
+    './data/templateConfigs/.vscode/tasks.json': `./out/${apiClientName}/.vscode/tasks.json`
+  }
+  
+  if ( ! fs.existsSync (`./out/${apiClientName}/.vscode`)) {
+    fs.mkdirSync (`./out/${apiClientName}/.vscode`);
+  }
+  
+    for (const file of Object.keys(fileDestinations)){
+    const dest = fileDestinations[file];
+    fs.copyFileSync(file,`${dest}`);
+  }
+
+  return errorCode;
 }
 
 /**
@@ -107,9 +146,18 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
 
   const parameterSignature = GenerateFunctionParameterSignature (apiRequestDefinition);
 
-  const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
+  // create a code fragment that builds the URL parameters for the api call(e.g. ?key=val&key2=val2 )
+  const urlParamsArray = GenerateUrlParamsArray (apiRequestDefinition);
 
-  const queryString = GenerateApiQueryString (apiRequestDefinition);
+  let urlParamsConstructor='';
+  if (urlParamsArray.length > 0) {
+    const uptInputs = {urlParamsArray};
+    urlParamsConstructor = mustache.render (urlParamsConstructorTemplate, uptInputs);
+  }
+  const urlParamsConstructorArray = urlParamsConstructor.split (/\n/);
+
+  // generate the functions JDSOC formatted documentation
+  const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
 
   let headerAccept = '';
   for (const produces of apiRequestDefinition.produces) {
@@ -117,19 +165,26 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
       headerAccept = `'Accept': 'application/json'`;
     }
   }
+
+  // generate custom header entries for the API call
   const headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
   headersCustom.push (headerAccept);
 
   // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${; let; })
-  const pathUpdated = path.replace (/\{/g, '${');
+  let pathUpdated = path.replace (/\{/g, '${');
+  // if there are url params to be passed in, give the urlParamsConstructor code a variable to place the params in.
+  if (urlParamsConstructorArray.length > 1) {
+    pathUpdated += '/${paramString}';
+  }
 
   const templateInputs = {
     clientLibraryName,
-    endpointPath: `${pathUpdated}${queryString}`,
+    endpointPath: `${pathUpdated}`,
     functionDocumentation,
     functionName,
     headersCustom,
-    parameterSignature
+    parameterSignature,
+    urlParamsConstructorArray
   };
 
   const functionString = mustache.render (functionTemplateGET, templateInputs);
@@ -137,20 +192,21 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
   return functionString;
 }
 
-function GenerateApiQueryString (apiRequestDefinition: any): string {
-  let paramPrefix = '?';
-  let queryString = '';
+function GenerateUrlParamsArray (apiRequestDefinition: any): string[] {
+  const urlParamsArray = [];
   let counter = 0;
   for (const parameter of apiRequestDefinition.parameters) {
     if (parameter.in.toLowerCase () === 'query') {
-      console.log (counter++, parameter.name);
-      queryString += `${paramPrefix}${parameter.name}=\${${parameter.name}}`;
-      paramPrefix = '&';
+      urlParamsArray.push (`${counter}: '${parameter.name}',`);
     }
+    counter++;
   }
-  console.log  (queryString);
+  // get rid of the comma on the last item in the array
+  if (urlParamsArray.length > 0) {
+    urlParamsArray[urlParamsArray.length - 1] = urlParamsArray[urlParamsArray.length - 1].slice (0, -1);
+  }
 
-  return queryString;
+  return urlParamsArray;
 }
 
 function CreateDeleteFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
@@ -547,13 +603,30 @@ export function GenerateModule (functionsString: string, interfaceString: string
   };
 
   const moduleString = mustache.render (moduleTemplate, templateInputs);
-  if ( ! fs.existsSync (`./out/`)) {
-    fs.mkdirSync (`./out`);
-  }
-  if ( ! fs.existsSync (`./out/${apiClientName}/`)) {
-    fs.mkdirSync (`./out/${apiClientName}`);
-  }
-  fs.writeFileSync ( `./out/${apiClientName}/${apiClientName}.ts`, moduleString);
 
   return moduleString;
+}
+
+export function WriteModule (moduleString: string, apiClientName: string): number {
+
+  let errorValue = 0;
+
+  // create the directory structure for the api client output
+  try {
+    if ( ! fs.existsSync (`./out/`)) {
+      fs.mkdirSync (`./out`);
+    }
+    if ( ! fs.existsSync (`./out/${apiClientName}`)) {
+      fs.mkdirSync (`./out/${apiClientName}`);
+    }
+    if ( ! fs.existsSync (`./out/${apiClientName}/src`)) {
+      fs.mkdirSync (`./out/${apiClientName}/src`);
+    }
+    fs.writeFileSync ( `./out/${apiClientName}/src/${apiClientName}.ts`, moduleString);
+  } catch (e) {
+    console.error (e);
+    errorValue = 1;
+  }
+
+  return errorValue;
 }

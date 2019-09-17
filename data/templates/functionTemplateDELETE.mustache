@@ -6,9 +6,9 @@
   public async {{functionName}} ({{parameterSignature}}) {
 
     const logMessagePrefix = '{{clientLibraryName}}.{{functionName}}() ';
-
-    const accessToken: string = '';
-
+    {{#urlParamsConstructorArray}}
+    {{.}}
+    {{/urlParamsConstructorArray}}
     const options = {
       headers: {
         {{#headersCustom}}
@@ -24,13 +24,13 @@
 
     return await requestPromise (options)
       .then ((response: any) => {
-        // console.log (`DEBUG -- $[logMessagePrefix] API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+        // console.log (`DEBUG -- ${logMessagePrefix} API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
 
         return response;
       })
       . catch ( (errorResponse: any) => {
-        console.log (`$[logMessagePrefix] There was an error calling the API.`);
-        console.log (`DEBUG -- $[logMessagePrefix] API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+        console.log (`${logMessagePrefix} There was an error calling the API.`);
+        console.log (`DEBUG -- ${logMessagePrefix} API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
 
         return errorResponse;
       });

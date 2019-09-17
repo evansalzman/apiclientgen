@@ -1,0 +1,13 @@
+
+// for each parameter that is defined, add it to the parameter string
+const urlParamArray: any = {
+  {{#urlParamsArray}}
+  {{.}}
+  {{/urlParamsArray}}
+};
+
+let paramString = '';
+for (let i =0; i < Object.keys (urlParamArray).length; i++) {
+  const paramSeparator = (paramString.length > 0) ? '&' : '?';
+  paramString += urlParamArray[i] ? `${paramSeparator}${urlParamArray[i]}=${arguments[i]}` : '';
+}
