@@ -12,25 +12,24 @@
     const options = {
       headers: {
         {{#headersCustom}}
-        {{.}},
+        {{.}}
         {{/headersCustom}}
-        'User-Agent': 'automated-testing-request',
-        'X-Conversation-Id': 'automated-testing-request-id'
       },
       json: true,
       method: 'GET',
-      url: `${this.apiServerUrl}{{endpointPath}}`
+      resolveWithFullResponse: true,
+      url: `${this.apiServerUrl}{{endpointPath}}{{urlParamsString}}`
     };
 
     return await requestPromise (options)
       .then ((response: any) => {
-        // console.log (`DEBUG ${logMessagePrefix} API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
+        console.log (`TODO: add debug mode DEBUG ${logMessagePrefix} API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
 
         return response;
       })
       . catch ( (errorResponse: any) => {
         console.log (`${logMessagePrefix} There was an error calling the API.`);
-        console.log (`DEBUG -- ${logMessagePrefix} API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+        console.log (`TODO: add debug mode DEBUG -- ${logMessagePrefix} API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
 
         return errorResponse;
       });

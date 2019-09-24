@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs, { truncate } from 'fs';
 import mustache from 'mustache';
 import * as requestPromise from 'request-promise';
 
@@ -29,37 +29,37 @@ export async function Write (swaggerJsonUrl: string, apiClientName: string, swag
   const moduleString = await GenerateModule (functionsString, interfaceString, apiClientName);
   const moduleStringUpdated = moduleCallback ? moduleCallback (moduleString) : moduleString;
   let moduleWriteErrorCode = WriteModule (moduleStringUpdated, apiClientName);
-  moduleWriteErrorCode = SetupAsNpmProject(apiClientName) ? moduleWriteErrorCode : 1; // if setup completes cleanly, stick with the existing error code.
+  moduleWriteErrorCode = SetupAsNpmProject (apiClientName) ? moduleWriteErrorCode : 1; // if setup completes cleanly, stick with the existing error code.
 
   return moduleWriteErrorCode;
 }
 
 /**
  * Copy all of the template config files in the new api client 'project' directory
- * @param apiClientName 
+ * @param apiClientName
  */
-function SetupAsNpmProject(apiClientName: string): number {
-  let errorCode = 0;
+function SetupAsNpmProject (apiClientName: string): number {
+  const errorCode = 0;
   const fileDestinations: any = {
     './data/templateConfigs/.eslintIgnore': `./out/${apiClientName}/.eslintIgnore`,
     './data/templateConfigs/.eslintrc.json': `./out/${apiClientName}/.eslintrc.json`,
     './data/templateConfigs/.gitignore': `./out/${apiClientName}/.gitignore`,
     './data/templateConfigs/.prettierrc': `./out/${apiClientName}/.prettierrc`,
     './data/templateConfigs/.tslint.json': `./out/${apiClientName}/.tslint.json`,
-    './data/templateConfigs/package.json': `./out/${apiClientName}/package.json`,
-    './data/templateConfigs/tsconfig.json': `./out/${apiClientName}/tsconfig.json`,
     './data/templateConfigs/.vscode/launch.json': `./out/${apiClientName}/.vscode/launch.json`,
     './data/templateConfigs/.vscode/settings.json': `./out/${apiClientName}/.vscode/settings.json`,
-    './data/templateConfigs/.vscode/tasks.json': `./out/${apiClientName}/.vscode/tasks.json`
-  }
-  
+    './data/templateConfigs/.vscode/tasks.json': `./out/${apiClientName}/.vscode/tasks.json`,
+    './data/templateConfigs/package.json': `./out/${apiClientName}/package.json`,
+    './data/templateConfigs/tsconfig.json': `./out/${apiClientName}/tsconfig.json`
+  };
+
   if ( ! fs.existsSync (`./out/${apiClientName}/.vscode`)) {
     fs.mkdirSync (`./out/${apiClientName}/.vscode`);
   }
-  
-    for (const file of Object.keys(fileDestinations)){
+
+  for (const file of Object.keys (fileDestinations)) {
     const dest = fileDestinations[file];
-    fs.copyFileSync(file,`${dest}`);
+    fs.copyFileSync (file, `${dest}`);
   }
 
   return errorCode;
@@ -128,27 +128,12 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
 
   const logMessagePrefix = 'apiclientwriter.CreateGetFunction() ';
 
-  // break path into an array, and capitalize each array element
-  const pathArray = path.split ('/');
-  for (let i = 0; i < pathArray.length; i++) {
-    if (pathArray[i].charAt (0).match (/\{/)) {
-      // uppercase the second char, char one is a curly brace
-      pathArray[i] = pathArray[i].charAt (1).toUpperCase () + pathArray[i].slice (2);
-      // prefix the 'filter name' with By (e.g. ByColumnName) and remove the curly braces
-      pathArray[i] = 'By' + pathArray[i].replace ('{', '').replace ('}', '');
-    }
-    if (pathArray[i].charAt (0).match (/[a-zA-z]/)) {
-      pathArray[i] = pathArray[i].charAt (0).toUpperCase () + pathArray[i].slice (1);
-    }
-  }
-  // join the array elements into a single camelcase word
-  const functionName = 'Get' + pathArray.join ('');
+  const functionName = 'Get' + GenerateFunctionNameFromPath (path);
 
   const parameterSignature = GenerateFunctionParameterSignature (apiRequestDefinition);
 
   // create a code fragment that builds the URL parameters for the api call(e.g. ?key=val&key2=val2 )
   const urlParamsArray = GenerateUrlParamsArray (apiRequestDefinition);
-
   let urlParamsConstructor='';
   if (urlParamsArray.length > 0) {
     const uptInputs = {urlParamsArray};
@@ -160,18 +145,28 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
   const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
 
   let headerAccept = '';
-  for (const produces of apiRequestDefinition.produces) {
-    if (produces.toLowerCase ().includes ('application/json')) {
-      headerAccept = `'Accept': 'application/json'`;
+  if (apiRequestDefinition.hasOwnProperty ('produces') && Array.isArray (apiRequestDefinition.produces)) {
+    for (const produces of apiRequestDefinition.produces) {
+      if (produces.toLowerCase ().includes ('application/json')) {
+        headerAccept = `'Accept': 'application/json',`;
+      }
     }
   }
 
   // generate custom header entries for the API call
-  const headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
-  headersCustom.push (headerAccept);
+  let headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
+  if (headerAccept !== '') {
+    headersCustom.push (headerAccept);
+  }
+
+  // sort.. the linter complains when headers are not sorted
+  headersCustom = headersCustom.sort ();
+  // remove the comma from the last entry
+  headersCustom[headersCustom.length - 1] = headersCustom[headersCustom.length - 1].slice (0, headersCustom[headersCustom.length - 1].length - 1);
 
   // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${; let; })
   let pathUpdated = path.replace (/\{/g, '${');
+  pathUpdated = CleanVariableNames  (pathUpdated);
   // if there are url params to be passed in, give the urlParamsConstructor code a variable to place the params in.
   if (urlParamsConstructorArray.length > 1) {
     pathUpdated += '/${paramString}';
@@ -192,58 +187,36 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
   return functionString;
 }
 
-function GenerateUrlParamsArray (apiRequestDefinition: any): string[] {
-  const urlParamsArray = [];
-  let counter = 0;
-  for (const parameter of apiRequestDefinition.parameters) {
-    if (parameter.in.toLowerCase () === 'query') {
-      urlParamsArray.push (`${counter}: '${parameter.name}',`);
-    }
-    counter++;
-  }
-  // get rid of the comma on the last item in the array
-  if (urlParamsArray.length > 0) {
-    urlParamsArray[urlParamsArray.length - 1] = urlParamsArray[urlParamsArray.length - 1].slice (0, -1);
-  }
-
-  return urlParamsArray;
-}
-
 function CreateDeleteFunction (path: string, apiRequestDefinition: any, clientLibraryName: string): string {
 
   const logMessagePrefix = 'apiclientwriter.CreateGetFunction() ';
 
-  // break path into an array, and capitalize each array element
-  const pathArray = path.split ('/');
-  for (let i = 0; i < pathArray.length; i++) {
-    if (pathArray[i].charAt (0).match (/\{/)) {
-      // uppercase the second char, char one is a curly brace
-      pathArray[i] = pathArray[i].charAt (1).toUpperCase () + pathArray[i].slice (2);
-      // prefix the 'filter name' with By (e.g. ByColumnName) and remove the curly braces
-      pathArray[i] = 'By' + pathArray[i].replace ('{', '').replace ('}', '');
-    }
-    if (pathArray[i].charAt (0).match (/[a-zA-z]/)) {
-      pathArray[i] = pathArray[i].charAt (0).toUpperCase () + pathArray[i].slice (1);
-    }
-  }
-  // join the array elements into a single camelcase word
-  const functionName = 'Delete' + pathArray.join ('');
+  const functionName = 'Delete' + GenerateFunctionNameFromPath (path);
 
   const parameterSignature = GenerateFunctionParameterSignature (apiRequestDefinition);
 
   const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
 
   let headerAccept = '';
-  for (const produces of apiRequestDefinition.produces) {
-    if (produces.toLowerCase ().includes ('application/json')) {
-      headerAccept = `'Accept': 'application/json'`;
+  if (apiRequestDefinition.hasOwnProperty ('produces') && Array.isArray (apiRequestDefinition.produces)) {
+    for (const produces of apiRequestDefinition.produces) {
+      if (produces.toLowerCase ().includes ('application/json')) {
+        headerAccept = `'Accept': 'application/json',`;
+      }
     }
   }
-  const headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
-  headersCustom.push (headerAccept);
+  let headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
+  if (headerAccept !== '') {
+    headersCustom.push (headerAccept);
+  }
+  // sort.. the linter complains when headers are not sorted
+  headersCustom = headersCustom.sort ();
+  // remove the comma from the last entry
+  headersCustom[headersCustom.length - 1] = headersCustom[headersCustom.length - 1].slice (0, headersCustom[headersCustom.length - 1].length - 1);
 
   // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${; let; })
-  const pathUpdated = path.replace (/\{/g, '${');
+  let pathUpdated = path.replace (/\{/g, '${');
+  pathUpdated = CleanVariableNames (pathUpdated);
 
   const templateInputs = {
     clientLibraryName,
@@ -263,30 +236,20 @@ function CreatePutFunction (path: string, apiRequestDefinition: any, clientLibra
 
   const logMessagePrefix = 'apiclientwriter.CreatePutFunction() ';
 
-  // break path into an array, and capitalize each array element
-  const pathArray = path.replace (/[\.]/g, '_').split ('/');
-  for (let i = 0; i < pathArray.length; i++) {
-    if (pathArray[i].charAt (0).match (/\{/)) {
-      // uppercase the second char, char one is a curly brace
-      pathArray[i] = pathArray[i].charAt (1).toUpperCase () + pathArray[i].slice (2);
-      // prefix the 'filter name' with By (e.g. ByColumnName) and remove the curly braces
-      pathArray[i] = 'By' + pathArray[i].replace ('{', '').replace ('}', '');
-    }
-    if (pathArray[i].charAt (0).match (/[a-zA-z]/)) {
-      pathArray[i] = pathArray[i].charAt (0).toUpperCase () + pathArray[i].slice (1);
-    }
-  }
-  // join the array elements into a single camelcase word, TODO: Create an optional map (API path => ReadableName) to allow better function names
-  const functionName = 'Put' + pathArray.join ('');
+  const functionName = 'Put' + GenerateFunctionNameFromPath (path);
 
   const parameterSignature = GenerateFunctionParameterSignature (apiRequestDefinition);
 
   const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
 
-  const headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
+  let headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
   const headerAccept = GenerateAcceptHeader (apiRequestDefinition, swaggerJson);
   const headerContentType = GenerateContentTypeHeader (apiRequestDefinition, swaggerJson);
   headersCustom.concat (headerAccept, headerContentType);
+  // sort.. the linter complains when headers are not sorted
+  headersCustom = headersCustom.sort ();
+  // remove the comma from the last entry
+  headersCustom[headersCustom.length - 1] = headersCustom[headersCustom.length - 1].slice (0, headersCustom[headersCustom.length - 1].length - 1);
 
   const formDataTs: string[] = GenerateFormDataArray (apiRequestDefinition);
 
@@ -295,7 +258,8 @@ function CreatePutFunction (path: string, apiRequestDefinition: any, clientLibra
   if (parameterSignature.search ('body:') > 1) { bodyOrFormField = 'body'; }
 
   // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${var})
-  const pathUpdated = path.replace (/\{/g, '${');
+  let pathUpdated = path.replace (/\{/g, '${');
+  pathUpdated = CleanVariableNames (pathUpdated);
 
   const templateInputs = {
     bodyOrFormField,
@@ -312,34 +276,27 @@ function CreatePutFunction (path: string, apiRequestDefinition: any, clientLibra
 
   return functionString;
 }
+
 function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibraryName: string, swaggerJson: any): string {
 
   const logMessagePrefix = 'apiclientwriter.CreatePostFunction() ';
 
-  // break path into an array, and capitalize each array element
-  const pathArray = path.replace (/[\.]/g, '_').split ('/');
-  for (let i = 0; i < pathArray.length; i++) {
-    if (pathArray[i].charAt (0).match (/\{/)) {
-      // uppercase the second char, char one is a curly brace
-      pathArray[i] = pathArray[i].charAt (1).toUpperCase () + pathArray[i].slice (2);
-      // prefix the 'filter name' with By (e.g. ByColumnName) and remove the curly braces
-      pathArray[i] = 'By' + pathArray[i].replace ('{', '').replace ('}', '');
-    }
-    if (pathArray[i].charAt (0).match (/[a-zA-z]/)) {
-      pathArray[i] = pathArray[i].charAt (0).toUpperCase () + pathArray[i].slice (1);
-    }
-  }
-  // join the array elements into a single camelcase word, TODO: Create an optional map (API path => ReadableName) to allow better function names
-  const functionName = 'Post' + pathArray.join ('');
+  const functionName = 'Post' + GenerateFunctionNameFromPath (path);
 
   const parameterSignature = GenerateFunctionParameterSignature (apiRequestDefinition);
 
   const functionDocumentation = GenerateFunctionDocumentation (apiRequestDefinition);
 
-  const headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
+  let headersCustom = GenerateCustomHeaderEntries (apiRequestDefinition);
+
   const headerAccept = GenerateAcceptHeader (apiRequestDefinition, swaggerJson);
+
   const headerContentType = GenerateContentTypeHeader (apiRequestDefinition, swaggerJson);
   headersCustom.concat (headerAccept, headerContentType);
+  // sort.. the linter complains when headers are not sorted
+  headersCustom = headersCustom.sort ();
+  // remove the comma from the last entry
+  headersCustom[headersCustom.length - 1] = headersCustom[headersCustom.length - 1].slice (0, headersCustom[headersCustom.length - 1].length - 1);
 
   const formDataTs: string[] = GenerateFormDataArray (apiRequestDefinition);
 
@@ -348,7 +305,7 @@ function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibr
   if (parameterSignature.search ('body:') > 1) { bodyOrFormField = 'body'; }
 
   // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${var})
-  const pathUpdated = path.replace (/\{/g, '${');
+  const pathUpdated = CleanPath (path);
 
   const templateInputs = {
     bodyOrFormField,
@@ -364,6 +321,78 @@ function CreatePostFunction (path: string, apiRequestDefinition: any, clientLibr
   const functionString = mustache.render (functionTemplatePOST, templateInputs);
 
   return functionString;
+}
+
+function CleanPath (path: string): string {
+
+  // make all {var-names} JS String template compatible, e.g. ${var-names}
+  const pathUpdated = path.replace (/\{/g, '${');
+  // clean up each variable name in the path (while leaving the path, itself, as is)
+  const pathArr = pathUpdated.split ('/');
+  let pathSeparator = '';
+  let pathNew = '';
+  for (let pathItem of pathArr) {
+    // if the item is a variable (starts with ${)
+    if (pathItem.indexOf ('${') === 0 ) {
+      pathItem = CleanVariableNames (pathItem);
+    }
+    pathNew += pathSeparator + pathItem;
+    pathSeparator = '/';
+  }
+
+  return pathNew;
+}
+/** based on the api path return a function name */
+function GenerateFunctionNameFromPath (path: string): string {
+
+  // replace illegal chars [-] with a slash (the letter following a '/' is capitalized below)
+  const pathArray = path.replace (/[-_\.]/g, '/').replace (/{/g, 'By/').replace (/}/g, '').split ('/');
+
+  for (let i = 0; i < pathArray.length; i++) {
+    // if (pathArray[i].charAt(0).match(/\{/)) {
+    //   // uppercase the second char, char one is a curly brace
+    //   pathArray[i] = pathArray[i].charAt(1).toUpperCase() + pathArray[i].slice(2);
+    //   // prefix the 'filter name' with By (e.g. ByColumnName) and remove the curly braces
+    //   pathArray[i] = 'By' + pathArray[i].replace('{', '').replace('}', '');
+    // }
+    // if (pathArray[i].charAt(0).match(/[a-zA-z]/)) {
+      pathArray[i] = pathArray[i].charAt (0).toUpperCase () + pathArray[i].slice (1);
+    // }
+  }
+
+  // join the array elements into a single camelcase word
+  const functionName = pathArray.join ('');
+
+  return functionName;
+}
+
+/**
+ * Create an array of key:val pairs that give the index and name of each url query param in a function signature
+ * This is important so that we can later walk through a functions arguments and check ONLY the query params, then
+ * build a query string of the params that have a value passed to the function
+ * @param apiRequestDefinition
+ */
+function GenerateUrlParamsArray (apiRequestDefinition: any): string[] {
+  const urlParamsArray = [];
+  let counter = 0;
+  // for each parameter the function will be passed, including non url query params
+  for (const parameter of apiRequestDefinition.parameters) {
+    // only add the query params
+    if (parameter.in.toLowerCase () === 'query') {
+      const name = CleanVariableNames (parameter.name);
+      // store the query param and the index where it will appear in the function signature (function args[])
+      urlParamsArray.push (`${counter}: '${name}',`);
+    }
+    // *always* increase the counter so that we know the index of the query params in the function signatures
+    // the function signatures (args array) will include other parameters, so count them!
+    counter++;
+  }
+  // get rid of the comma on the last item in the array
+  if (urlParamsArray.length > 0) {
+    urlParamsArray[urlParamsArray.length - 1] = urlParamsArray[urlParamsArray.length - 1].slice (0, -1);
+  }
+
+  return urlParamsArray;
 }
 
 function GenerateFormDataArray (apiRequestDefinition: any): string[] {
@@ -450,16 +479,30 @@ function GenerateContentTypeHeader (apiRequestDefinition: any, swaggerJson: any)
 
 function GenerateFunctionDocumentation (getDef: any): string[] {
   const functionDocumentation: string[] = [];
-  functionDocumentation.push (`* ${getDef.summary}`);
 
+  // add the summary field
+  functionDocumentation.push (`* ${getDef.summary.replace (/\n/g, ' ')}`);
+
+  // TODO: handle API defined types from swaggerdoc.definitions. Currently appear as {undefined}
+  // add the description field
   const description = getDef.description.trim ();
   for (const line of description.split (/\n/)) {
-    functionDocumentation.push (`* ${line.trim ()}`);
-  }
-  for (const param of getDef.parameters) {
-    if (param.in !== 'header') {
-      functionDocumentation.push (`* @param ${param.name} ${param.type} ${param.description.trim ()}`);
+    const truncatedLines = line.match (/.{1,230}/g);
+    if (truncatedLines) {
+      for (const truncatedLine of truncatedLines) {
+        functionDocumentation.push (`* ${truncatedLine.replace (/\n/g, ' ').trim ()}`);
+      }
     }
+  }
+
+  // add each parameter for the JSDOC
+  for (const param of getDef.parameters) {
+    //if (param.in !== 'header') {
+      const desc = param.hasOwnProperty ('description') ? param.description : 'Parameter was not given a description in the API documentation';
+      const reqd = param.hasOwnProperty ('required') ? param.reqd : true; // if the definition of the param is broken, assume the param is required
+      const paramName = reqd ? CleanVariableNames (param.name) : `[${CleanVariableNames (param.name)}]`;
+      functionDocumentation.push (`* @param {${param.type}} ${paramName} ${desc}`);
+    //}
   }
 
   return functionDocumentation;
@@ -470,9 +513,13 @@ function GenerateCustomHeaderEntries (requestDefinition: any) {
 
   for (const parameter of requestDefinition.parameters) {
     if (parameter.in === 'header') {
-      customHeaders.push (`'${parameter .name}': \`\${${parameter.name.charAt (0).toLowerCase ()}${parameter.name.slice (1)}}\``);
+      customHeaders.push (`'${parameter.name}': \`\${${parameter.name.charAt (0).toLowerCase ()}${CleanVariableNames (parameter.name).slice (1)}}\`,`);
     }
   }
+
+  // add these here, not in the template, so we can sort them properly
+  customHeaders.push (`'User-Agent': 'automated-testing-request',`);
+  customHeaders.push (`'X-Conversation-Id': 'automated-testing-request-id',`);
 
   return customHeaders;
 }
@@ -490,29 +537,48 @@ function GenerateFunctionParameterSignature (apiRequestDefinition: any): string 
 
     // set the type to be used for each parameter in the signature
     let paramType: string;
+    const paramNameClean = `${param.name.charAt (0).toLowerCase ()}${CleanVariableNames (param.name).slice (1)}`;
     if (param.in === 'body' ) {
       // get the name we use to create the interface for the type, last part of the URI
-      const pa = param.schema.$ref.split ('/');
-      paramType = `I${pa[pa.length - 1]}`;
+      if (param.schema.hasOwnProperty ('type')) {
+        paramType = param.schema.type;
+        // our param type is set, unless it's an array. Now get the array type
+        if (paramType === 'array') {
+          const pa = param.schema.items.$ref.split ('/');
+          paramType = `I${pa[pa.length - 1]}[]`;
+        }
+      } else {
+        const pa = param.schema.$ref.split ('/');
+        paramType = `I${pa[pa.length - 1]}`;
+
+      }
     } else {
-      // convert numeric swagger supplied types to be represented as JS type 'number'
-      paramType = (param.type === 'integer' || param.type === 'float') ? 'number' : param.type;
+      // convert numeric swagger supplied types to TS compat types
+      switch (param.type) {
+        case 'integer':
+        case 'float':
+        case 'long':
+          paramType = 'number';
+          break;
+        case 'array':
+          paramType = param.items.type + '[]';
+          break;
+        default:
+          paramType = param.type;
+      }
     }
 
+    // add this param to the part of the signature it belongs in
     if ((param.in !== 'path') && param.required === false) {
-      const paramName = `${param.name.charAt (0).toLowerCase ()}${param.name.slice (1)}?`; // make sure the fist letter is lowercase
-      parametersOptionalItems += `${parametersOptionalItemsSeparator}${paramName}: ${paramType}`;
+      parametersOptionalItems += `${parametersOptionalItemsSeparator}${paramNameClean}?: ${paramType}`;
       parametersOptionalItemsSeparator = ', ';
     } else if ((param.in !== 'path') && param.required === true) {
-      const paramName = `${param.name.charAt (0).toLowerCase ()}${param.name.slice (1)}`; // make sure the fist letter is lowercase
-      parameterQueryItems += `${parameterQueryItemsSeparator}${paramName}: ${paramType}`;
+      parameterQueryItems += `${parameterQueryItemsSeparator}${paramNameClean}: ${paramType}`;
       parameterQueryItemsSeparator = ', ';
     } else if (param.in === 'path') {
-      const paramName = param.name;
-      parameterPathItems += `${parameterPathItemsSeparator}${paramName}: ${paramType}`;
+      parameterPathItems += `${parameterPathItemsSeparator}${paramNameClean}: ${paramType}`;
       parameterPathItemsSeparator = ', ';
     }
-    // TODO: handle path parameters that are not required? apped them to the end of the optionals?
   }
 
   // for each param list, add a comma if there are more params to follow (i.e. they are non-zero length)
@@ -527,6 +593,19 @@ function GenerateFunctionParameterSignature (apiRequestDefinition: any): string 
   return parameterPathItems + parameterQueryItems + parametersOptionalItems;
 }
 
+function CleanVariableNames (varString: string): string {
+  return varString ? varString.replace (/[-_\ ]/g, '') : varString;
+}
+
+function CleanInterfaceNames (varString: string): string {
+  let cleanedInterfaceName = CleanVariableNames (varString);
+  // ensure interface names are capitalized
+  cleanedInterfaceName = cleanedInterfaceName[0].toUpperCase () + cleanedInterfaceName.slice (1);
+  const interfaceName: string = `I${cleanedInterfaceName}`;
+
+  return interfaceName;
+}
+
 export function GenerateInterfaces (swaggerJson: any ): string {
 
   const logMessagePrefix = 'apiclientwriter.GenerateInterfaces() ';
@@ -534,32 +613,42 @@ export function GenerateInterfaces (swaggerJson: any ): string {
   let interfacesString: string = '';
 
   Object.entries (swaggerJson.definitions).forEach ((entry) => {
-    const interfaceName: string = `I${entry[0]}`;
+    const interfaceName = CleanInterfaceNames (entry[0]);
     const interfaceProps: any[] = [];
     const interfaceDocumentation: string[] = [];
     const currDef: any = entry[1];
+    // if the definition has fields/properties
     if (currDef.hasOwnProperty ('properties')) {
-
       Object.keys (currDef.properties).forEach ( (propertyName) => {
         // ensure that the name starts with a lowercase
         let propName = propertyName[0].toLowerCase () + propertyName.slice (1);
         let propNameForDoc = propName;
-        // convert types to JS compatible type
-        let propType: string;
         const propDescription: string = currDef.properties[propertyName].description;
-        switch (currDef.properties[propertyName].type.toLowerCase ()) {
-          case ('string'):
-            propType = 'string';
-            break;
-          case('boolean'):
-            propType = 'boolean';
-            break;
-          case('float'):
-          case('integer'):
-            propType = 'number';
-            break;
-          case('array'):
-            propType = 'any[]';
+        // convert types to JS compatible type, or set it to an API defined typ
+        let propType;
+        if (currDef.properties[propertyName].hasOwnProperty ('$ref')) {
+            // aPI defined property type is based on the last part of the path
+            const pa = currDef.properties[propertyName].$ref.split ('/');
+            // and we name interfaces, starting with the letter 'I'
+            propType = `I${pa[pa.length - 1]}`;
+        } else {
+          switch (currDef.properties[propertyName].type.toLowerCase ()) {
+            case ('string'):
+              propType = 'string';
+              break;
+            case('boolean'):
+              propType = 'boolean';
+              break;
+            case('float'):
+            case('integer'):
+              propType = 'number';
+              break;
+            case('array'):
+              propType = GetArrayTypeOfInterfaceProperty (propertyName, currDef);
+              break;
+            case('object'):
+              propType = 'any';
+          }
         }
         // is the propname optional? (check w/the original prop name, not the fixed 'uncapitalized' one)
         if ( currDef.hasOwnProperty ('required') && !currDef.required.includes (propertyName) ) {
@@ -567,19 +656,44 @@ export function GenerateInterfaces (swaggerJson: any ): string {
           propName = `${propName}?`;
         }
         // add a line for the interface defining this property.
-        interfaceProps.push (`${propName}: ${propType}`);
+        interfaceProps.push (`${propName}: ${CleanVariableNames (propType)}`);
         // create a line for the interface jsdoc that describes the property.
-        interfaceDocumentation.push (`@property {${propType}} ${propNameForDoc} - ${propDescription}`);
+        interfaceDocumentation.push (`@property {${CleanVariableNames (propType)}} ${propNameForDoc} - ${propDescription}`);
       });
       const genResult = GenerateInterfaceString (interfaceName, interfaceProps, interfaceDocumentation);
       interfacesString += genResult;
     } else {
-      console.log (`${logMessagePrefix} failed to find 'properties' array for ${interfaceName}`);
-      process.exit (1);
+      interfaceProps.push ('[propName: string]: any');
+      interfaceDocumentation.push ('@property {optional} {any} generic type, generic object');
+      const genResult = GenerateInterfaceString (interfaceName, interfaceProps, interfaceDocumentation);
+      interfacesString += genResult;
     }
   });
 
   return interfacesString;
+}
+
+/**
+ * returns the array type for an Interface property definition as provided in the swagger.json.definitions
+ * @param propertyName
+ * @param currDef
+ */
+function GetArrayTypeOfInterfaceProperty (propertyName: string, currDef: any) {
+  let propType = 'any[]';
+  // the array type should be defined in the items property under .$ref or .type
+  if (currDef.properties[propertyName].hasOwnProperty ('items')) {
+    if (currDef.properties[propertyName].items.hasOwnProperty ('$ref')) {
+      // an array of a swagger.json defined type
+      const typeRef = currDef.properties[propertyName].items.$ref.split ('/');
+      propType = `${CleanInterfaceNames (typeRef[typeRef.length - 1])}[]`;
+    }
+    else if (currDef.properties[propertyName].items.hasOwnProperty ('type')) {
+      // an array of a TS type
+      propType = `${currDef.properties[propertyName].items.type}[]`;
+    }
+  }
+
+  return propType;
 }
 
 function GenerateInterfaceString (interfaceName: string, interfaceProperties: any[], interfaceDocumentation?: any): string {
