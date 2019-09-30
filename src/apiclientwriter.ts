@@ -91,7 +91,6 @@ export async function LoadSwaggerJson ( url: string ) {
   } else {
 
     const swaggerFileJson = JSON.parse (fs.readFileSync (url, 'utf-8'));
-    console.log (`TODO: DEBUG -- swaggerFileJson ${require ('util').inspect (swaggerFileJson, {colors: true, depth: 2})}`);
 
     return swaggerFileJson;
   }
@@ -624,44 +623,21 @@ export function GenerateInterfaces (swaggerJson: any ): string {
         let propNameForDoc = propName;
         const propDescription: string = currDef.properties[propertyName].description;
         // convert types to JS compatible type, or set it to an API defined typ
-        let propType;
-        if (currDef.properties[propertyName].hasOwnProperty ('$ref')) {
-            // aPI defined property type is based on the last part of the path
-            const pa = currDef.properties[propertyName].$ref.split ('/');
-            // and we name interfaces, starting with the letter 'I'
-            propType = `I${pa[pa.length - 1]}`;
-        } else {
-          switch (currDef.properties[propertyName].type.toLowerCase ()) {
-            case ('string'):
-              propType = 'string';
-              break;
-            case('boolean'):
-              propType = 'boolean';
-              break;
-            case('float'):
-            case('integer'):
-              propType = 'number';
-              break;
-            case('array'):
-              propType = GetArrayTypeOfInterfaceProperty (propertyName, currDef);
-              break;
-            case('object'):
-              propType = 'any';
-          }
-        }
+        const propType = GetPropertyType (currDef, propertyName);
         // is the propname optional? (check w/the original prop name, not the fixed 'uncapitalized' one)
         if ( currDef.hasOwnProperty ('required') && !currDef.required.includes (propertyName) ) {
           propNameForDoc = `[${propName}]`;
           propName = `${propName}?`;
         }
         // add a line for the interface defining this property.
-        interfaceProps.push (`${propName}: ${CleanVariableNames (propType)}`);
+        interfaceProps.push (`${propName}: ${propType}`);
         // create a line for the interface jsdoc that describes the property.
         interfaceDocumentation.push (`@property {${CleanVariableNames (propType)}} ${propNameForDoc} - ${propDescription}`);
       });
       const genResult = GenerateInterfaceString (interfaceName, interfaceProps, interfaceDocumentation);
       interfacesString += genResult;
     } else {
+      // if we run into a property without its type defined -> add a generic entry, allow any property to be allowed, optionally
       interfaceProps.push ('[propName: string]: any');
       interfaceDocumentation.push ('@property {optional} {any} generic type, generic object');
       const genResult = GenerateInterfaceString (interfaceName, interfaceProps, interfaceDocumentation);
@@ -670,6 +646,37 @@ export function GenerateInterfaces (swaggerJson: any ): string {
   });
 
   return interfacesString;
+}
+
+function GetPropertyType ( currDef: any, propertyName: string): string {
+  let propType: string;
+  if (currDef.properties[propertyName].hasOwnProperty ( '$ref')) {
+    // aPI defined property type is based on the last part of the path
+    const pa = currDef.properties[propertyName].$ref.split ( '/');
+    // and we name interfaces, starting with the letter 'I'
+    propType = `I${pa[pa.length - 1]}`;
+  }
+  else {
+    switch (currDef.properties[propertyName].type.toLowerCase ( )) {
+      case ('string'):
+        propType = 'string';
+        break;
+      case ('boolean'):
+        propType = 'boolean';
+        break;
+      case ('float'):
+      case ('integer'):
+        propType = 'number';
+        break;
+      case ('array'):
+        propType = GetArrayTypeOfInterfaceProperty ( propertyName, currDef);
+        break;
+      case ('object'):
+        propType = 'any';
+    }
+  }
+
+  return propType;
 }
 
 /**
