@@ -1,8 +1,8 @@
 {
-  "name": "[APINAME]client",
+  "name": "{{API_NAME}}client",
   "version": "1.0.1-9",
   "description": "API client for nodejs",
-  "main": "dist/index",
+  "main": "dist/{{API_CLIENT_FILENAME}}",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

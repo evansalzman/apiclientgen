@@ -62,6 +62,15 @@ function SetupAsNpmProject (apiClientName: string): number {
     fs.copyFileSync (file, `${dest}`);
   }
 
+  // read, then fix up the package.json for this project
+  let packageJson = fs.readFileSync (`./out/${apiClientName}/package.json`, 'utf-8');
+  // give the npm project the correct name
+  packageJson = packageJson.replace (/{{API_NAME}}/, apiClientName.toLowerCase ());
+  // point "main" at the client service file in ./dist/
+  packageJson = packageJson.replace (/{{API_CLIENT_FILENAME}}/, apiClientName);
+  // write the fixed up package.json
+  fs.writeFileSync (`./out/${apiClientName}/package.json`, packageJson);
+
   return errorCode;
 }
 
