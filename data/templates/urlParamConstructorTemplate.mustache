@@ -1,11 +1,11 @@
-
-// for each url query parameter that is passed to this function, add it to the parameter string
+// If this function has url query parameters, there will be code below to build a parameter string.
+// if there are no url query parameters for this function, This comment section can be ignored!
+// Loop over a _full list of possible url query parameters_, building a query string and ignoring those without supplied values (no empty params in the url, please!)
 const urlParamArray: any = {
   {{#urlParamsArray}}
   {{.}}
   {{/urlParamsArray}}
 };
-
 let paramString = '';
 for (let i =0; i < Object.keys (urlParamArray).length; i++) {
   const paramSeparator = (paramString.length > 0) ? '&' : '?';

@@ -72,19 +72,29 @@ function SetupAsNpmProject (apiClientName: string): number {
 export async function LoadSwaggerJson ( url: string ) {
   const logMessagePrefix = 'apiclientwriter.LoadSwaggerJson() ';
 
-  return await requestPromise.get (url)
-  .then ((response: any) => {
+  if (url.toLowerCase ().includes ('http')) {
 
-    const responseJson = JSON.parse (response);
+    return await requestPromise.get (url)
+    .then ((response: any) => {
 
-    return responseJson;
-  })
-  .catch ((errorResponse: any) => {
+      const responseJson = JSON.parse (response);
 
-    console.log (`${logMessagePrefix} errorResponse: ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+      return responseJson;
+    })
+    .catch ((errorResponse: any) => {
 
-    return errorResponse;
-  });
+      console.log (`${logMessagePrefix} errorResponse: ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+
+      return errorResponse;
+    });
+
+  } else {
+
+    const swaggerFileJson = JSON.parse (fs.readFileSync (url, 'utf-8'));
+    console.log (`TODO: DEBUG -- swaggerFileJson ${require ('util').inspect (swaggerFileJson, {colors: true, depth: 2})}`);
+
+    return swaggerFileJson;
+  }
 }
 
 export async function GenerateClientCalls (swaggerJson: any, clientLibraryName: string): Promise<string> {
@@ -165,8 +175,8 @@ function CreateGetFunction (path: string, apiRequestDefinition: any, clientLibra
   headersCustom[headersCustom.length - 1] = headersCustom[headersCustom.length - 1].slice (0, headersCustom[headersCustom.length - 1].length - 1);
 
   // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${; let; })
-  let pathUpdated = path.replace (/\{/g, '${');
-  pathUpdated = CleanVariableNames  (pathUpdated);
+  let pathUpdated = CleanPath (path);
+
   // if there are url params to be passed in, give the urlParamsConstructor code a variable to place the params in.
   if (urlParamsConstructorArray.length > 1) {
     pathUpdated += '/${paramString}';
@@ -215,8 +225,7 @@ function CreateDeleteFunction (path: string, apiRequestDefinition: any, clientLi
   headersCustom[headersCustom.length - 1] = headersCustom[headersCustom.length - 1].slice (0, headersCustom[headersCustom.length - 1].length - 1);
 
   // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${; let; })
-  let pathUpdated = path.replace (/\{/g, '${');
-  pathUpdated = CleanVariableNames (pathUpdated);
+  const pathUpdated = CleanPath (path);
 
   const templateInputs = {
     clientLibraryName,
@@ -258,8 +267,7 @@ function CreatePutFunction (path: string, apiRequestDefinition: any, clientLibra
   if (parameterSignature.search ('body:') > 1) { bodyOrFormField = 'body'; }
 
   // convert the swagger path variables into JS string template variables (e.g. {var} becomes ${var})
-  let pathUpdated = path.replace (/\{/g, '${');
-  pathUpdated = CleanVariableNames (pathUpdated);
+  const pathUpdated = CleanPath (path);
 
   const templateInputs = {
     bodyOrFormField,
@@ -505,6 +513,10 @@ function GenerateFunctionDocumentation (getDef: any): string[] {
     //}
   }
 
+  // add the @return documentation, this specifies how we will return a full server response object, or errors.
+  functionDocumentation.push ('* @return {any} Returns a full response object recieved from the server. This usually includes response.body and response.headers,');
+  functionDocumentation.push ('*               but on error will return response.errorMessage and response.errorResponse which contains the full server response');
+
   return functionDocumentation;
 }
 
@@ -591,19 +603,6 @@ function GenerateFunctionParameterSignature (apiRequestDefinition: any): string 
 
   // url path params first, query params, then optional query params last
   return parameterPathItems + parameterQueryItems + parametersOptionalItems;
-}
-
-function CleanVariableNames (varString: string): string {
-  return varString ? varString.replace (/[-_\ ]/g, '') : varString;
-}
-
-function CleanInterfaceNames (varString: string): string {
-  let cleanedInterfaceName = CleanVariableNames (varString);
-  // ensure interface names are capitalized
-  cleanedInterfaceName = cleanedInterfaceName[0].toUpperCase () + cleanedInterfaceName.slice (1);
-  const interfaceName: string = `I${cleanedInterfaceName}`;
-
-  return interfaceName;
 }
 
 export function GenerateInterfaces (swaggerJson: any ): string {
@@ -743,4 +742,17 @@ export function WriteModule (moduleString: string, apiClientName: string): numbe
   }
 
   return errorValue;
+}
+
+function CleanVariableNames (varString: string): string {
+  return varString ? varString.replace (/[-_\ ]/g, '') : varString;
+}
+
+function CleanInterfaceNames (varString: string): string {
+  let cleanedInterfaceName = CleanVariableNames (varString);
+  // ensure interface names are capitalized
+  cleanedInterfaceName = cleanedInterfaceName[0].toUpperCase () + cleanedInterfaceName.slice (1);
+  const interfaceName: string = `I${cleanedInterfaceName}`;
+
+  return interfaceName;
 }

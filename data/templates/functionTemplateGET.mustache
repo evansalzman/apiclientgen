@@ -9,6 +9,7 @@
     {{#urlParamsConstructorArray}}
     {{.}}
     {{/urlParamsConstructorArray}}
+    // build the request options to pass to request-promise
     const options = {
       headers: {
         {{#headersCustom}}
@@ -21,17 +22,24 @@
       url: `${this.apiServerUrl}{{endpointPath}}{{urlParamsString}}`
     };
 
+    // make the request and return the response to the caller
     return await requestPromise (options)
       .then ((response: any) => {
-        console.log (`TODO: add debug mode DEBUG ${logMessagePrefix} API JSON response ${require ('util').inspect (response, {colors: true, depth: 2})}`);
-
+        
+        // return the full response (typically, the response.body contains the data needed, but response.headers is often of use)
+      
         return response;
       })
-      . catch ( (errorResponse: any) => {
+      .catch ( (errorResponse: any) => {
+        
+        // log some output since we've gotten a failure, visual clue for the developers using the client
         console.log (`${logMessagePrefix} There was an error calling the API.`);
-        console.log (`TODO: add debug mode DEBUG -- ${logMessagePrefix} API JSON errorResponse ${require ('util').inspect (errorResponse, {colors: true, depth: 2})}`);
+        const error = {
+          errorMessage: `${logMessagePrefix} There was an error calling the API.`,
+          errorResponse: errorResponse
+        }
 
-        return errorResponse;
+        return error;
       });
 
   }
