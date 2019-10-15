@@ -662,8 +662,8 @@ function GetPropertyType ( currDef: any, propertyName: string): string {
   if (currDef.properties[propertyName].hasOwnProperty ( '$ref')) {
     // aPI defined property type is based on the last part of the path
     const pa = currDef.properties[propertyName].$ref.split ( '/');
-    // and we name interfaces, starting with the letter 'I'
-    propType = `I${pa[pa.length - 1]}`;
+    // we name interfaces starting with the letter 'I'
+    propType = `I${pa[pa.length - 1].replace (/\s/g, '')}`;
   }
   else {
     switch (currDef.properties[propertyName].type.toLowerCase ( )) {
@@ -767,7 +767,7 @@ function CleanVariableNames (varString: string): string {
 function CleanInterfaceNames (varString: string): string {
   let cleanedInterfaceName = CleanVariableNames (varString);
   // ensure interface names are capitalized
-  cleanedInterfaceName = cleanedInterfaceName[0].toUpperCase () + cleanedInterfaceName.slice (1);
+  cleanedInterfaceName = cleanedInterfaceName[0].toUpperCase ().replace (/\s/g, '') + cleanedInterfaceName.slice (1);
   const interfaceName: string = `I${cleanedInterfaceName}`;
 
   return interfaceName;
