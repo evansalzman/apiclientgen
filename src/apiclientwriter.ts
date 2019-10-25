@@ -389,20 +389,17 @@ function GenerateFunctionNameFromPath (path: string): string {
  * @param apiRequestDefinition
  */
 function GenerateUrlParamsArray (apiRequestDefinition: any): string[] {
-  const urlParamsArray = [];
-  let counter = 0;
+  const urlParamsArray: string[] = [];
   // for each parameter the function will be passed, including non url query params
   for (const parameter of apiRequestDefinition.parameters) {
     // only add the query params
     if (parameter.in.toLowerCase () === 'query') {
       const name = CleanVariableNames (parameter.name);
       // store the query param and the index where it will appear in the function signature (function args[])
-      urlParamsArray.push (`${counter}: '${name}',`);
+      urlParamsArray.push (`${name},`);
     }
-    // *always* increase the counter so that we know the index of the query params in the function signatures
-    // the function signatures (args array) will include other parameters, so count them!
-    counter++;
   }
+  urlParamsArray.sort ();
   // get rid of the comma on the last item in the array
   if (urlParamsArray.length > 0) {
     urlParamsArray[urlParamsArray.length - 1] = urlParamsArray[urlParamsArray.length - 1].slice (0, -1);

@@ -6,6 +6,8 @@
   public async {{functionName}} ({{parameterSignature}}) {
 
     const logMessagePrefix = '{{clientLibraryName}}.{{functionName}}() ';
+
+    const functionParameters = '{{parameterSignature}}';
     {{#urlParamsConstructorArray}}
     {{.}}
     {{/urlParamsConstructorArray}}
